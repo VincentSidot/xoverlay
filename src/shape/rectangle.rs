@@ -14,59 +14,49 @@ use crate::{
     drawable::Drawable
 };
 
-use super::Shape;
+use super::{
+    coord::{
+        Anchor, Coord, CoordExt, Size, SizeExt
+    }, Shape
+};
 
 pub struct Rectangle {
-    x: i16,
-    y: i16,
-    width: u16,
-    height: u16,
+    anchor: Anchor, // Describes where the coordinate is relative to the shape
+    position: Coord,
+    size: Size,
     color: Color,
+    filled: bool
 }
 
 impl Rectangle {
-
-    pub fn pixels(
-        x: i16,
-        y: i16,
-        width: u16,
-        height: u16,
+    pub fn fill(
+        anchor: Anchor,
+        position: Coord,
+        size: Size,
         color: Color,
-        drawable: &dyn Drawable,
     ) -> Result<Box<Self>, Box<dyn Error>> {
-
-        // Ensure that the rectangle is within the bounds of the drawable
-        if x < 0 || 
-           y < 0 ||
-           x + width as i16 > drawable.width() as i16 ||
-           y + height as i16 > drawable.height() as i16
-        {
-            Err("Rectangle is outside the bounds of the drawable")?;
-        }
-        
         Ok(Box::new(Self {
-            x,
-            y,
-            width,
-            height,
+            anchor,
+            position,
+            size,
             color,
+            filled: true
         }))
     }
 
-    pub fn percent(
-        fx: f32,
-        fy: f32,
-        fwidth: f32,
-        fheight: f32,
+    pub fn new(
+        anchor: Anchor,
+        position: Coord,
+        size: Size,
         color: Color,
-        drawable: &dyn Drawable,
     ) -> Result<Box<Self>, Box<dyn Error>> {
-        let x = (fx * drawable.width() as f32) as i16;
-        let y = (fy * drawable.height() as f32) as i16;
-        let width = (fwidth * drawable.width() as f32) as u16;
-        let height = (fheight * drawable.height() as f32) as u16;
-
-        Self::pixels(x, y, width, height, color, drawable)
+        Ok(Box::new(Self {
+            anchor,
+            position,
+            size,
+            color,
+            filled: false
+        }))
     }
 
 }
@@ -77,17 +67,34 @@ impl<C: Connection> Shape<C> for Rectangle {
         conn: &C,
         gc: &Gcontext,
         drawable: &dyn Drawable
-    ) -> Result<(), Box<dyn Error>> {
-        conn.poly_fill_rectangle(
-            drawable.id(),
-            *gc,
-            &[XRectangle {
-                x: self.x,
-                y: self.y,
-                width: self.width,
-                height: self.height,
-            }]
-        )?;
+    ) -> Result<(), Box<dyn Error>> {        
+        // Calculate the position of the rectangle
+        let coord = self.position.top_left(&self.anchor, &self.size).to_real_coord(drawable.size());
+        let size = self.size.to_real_size(drawable.size());
+
+        let (x, y) = (coord.x as i16, coord.y as i16);
+        let (width, height) = (size.x as u16, size.y as u16);
+
+        match self.filled {
+            true => conn.poly_fill_rectangle(
+                drawable.id(),
+                *gc,
+                &[XRectangle {
+                    x,
+                    y,
+                    width,
+                    height,
+                }])?,
+            false => conn.poly_rectangle(
+                drawable.id(),
+                *gc,
+                &[XRectangle {
+                    x,
+                    y,
+                    width,
+                    height,
+                }])?
+        };
 
         Ok(())
     }

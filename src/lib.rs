@@ -1,7 +1,9 @@
 mod color;
+mod drawable;
+pub mod event;
+mod math;
 mod overlay;
 pub mod shape;
-mod drawable;
 
 pub use color::Color;
 pub use overlay::Overlay;

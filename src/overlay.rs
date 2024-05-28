@@ -27,12 +27,12 @@ use crate::{
         Window,
         },
         Drawable
-    },
-    shape::Shape, Color
+    }, event::Event, math::vec::Vec2, shape::{coord::{Anchor, Coord, Size}, Rectangle, Shape}, Color
 };
 
 pub struct Overlay {
-    conn: RustConnection,
+    pub conn: RustConnection,
+    parent: Window,
     window: Window,
     render_queue: Vec<Box<dyn Shape<RustConnection>>>
 }
@@ -63,6 +63,7 @@ impl Overlay {
 
         Ok(Self {
             conn,
+            parent,
             window,
             render_queue: Vec::new()
         })
@@ -81,11 +82,18 @@ impl Overlay {
         self
     }
 
+    /// Get the window of the overlay
     pub fn window(&self) -> &Window {
         &self.window
     }
 
-    pub fn draw(&mut self) -> Result<&mut Self, Box<dyn Error>> {
+    /// Get the parent window of the overlay
+    pub fn parent(&self) -> &Window {
+        &self.parent
+    }
+
+    /// Draw the shapes in the overlay
+    pub fn draw(&self) -> Result<&Self, Box<dyn Error>> {
 
         // Let's build the shape pixmap
         let pixmap = Pixmap::new(&self.conn, &self.window, Some(1))?;
@@ -167,8 +175,6 @@ impl Overlay {
             self.window.height()
         )?;
 
-        self.render_queue.clear();
-
         // Free the pixmap
         pixmap.free(&self.conn)?;
         // Free the graphics context
@@ -179,6 +185,64 @@ impl Overlay {
 
         Ok(self)
     }
+
+    /// Clear the shapes in the overlay
+    fn clear_shapes(&mut self) -> &mut Self{
+        self.render_queue.clear();
+        self
+    }
+
+    /// Clear the overlay window
+    pub fn clear(&mut self) -> Result<&mut Self, Box<dyn Error>> {
+        let rectangle = Rectangle::new(
+            Anchor::default(),
+            Coord::new(0.0, 0.0),
+            Size::new(1.0, 1.0),
+            Color::TRANSPARENT
+        )?;
+
+        self.clear_shapes();
+        self.add_shape(rectangle);
+        self.draw()?;
+        self.clear_shapes();
+        
+        Ok(self)
+    }
+
+    fn refresh(&mut self, new_size: Vec2<u16>) -> Result<&mut Self, Box<dyn Error>> {
+        self.parent.resize_event(new_size);
+        self.window.refresh(&self.conn, Some(&self.parent))?;
+        Ok(self)
+    }
+
+    pub fn event_loop<F>(
+        &mut self,
+        mut callback: F
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnMut(&mut Self, Event) -> ()
+    {
+        // Draw at least once
+        self.draw()?;
+        // Main event loop
+        loop {
+            // Poll the event
+            let event = Event::wait(&self)?;
+            match event {
+                Event::ParentResize(size) => {
+                    self.refresh(size)?.draw()?;
+                },
+                Event::Redraw => {
+                    self.draw()?;
+                },
+                _ => {
+                    // Call the event handler
+                    callback(self, event);
+                }
+            }
+        }
+    }
+
 }
 
 impl Drawable for Overlay {
@@ -186,23 +250,15 @@ impl Drawable for Overlay {
         self.window.id()
     }
 
-    fn width(&self) -> u16 {
-        self.window.width()
-    }
-
-    fn height(&self) -> u16 {
-        self.window.height()
-    }
-
-    fn x(&self) -> i16 {
-        self.window.x()
-    }
-
-    fn y(&self) -> i16 {
-        self.window.y()
-    }
-
     fn depth(&self) -> u8 {
         self.window.depth()
+    }
+    
+    fn size(&self) -> Vec2<u16> {
+        self.window.size()
+    }
+    
+    fn position(&self) -> Vec2<i16> {
+        self.window.position()
     }
 }

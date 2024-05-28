@@ -10,6 +10,8 @@ use super::{
     Drawable,
 };
 
+use crate::math::vec::Vec2;
+
 
 pub struct Pixmap<'w> {
     id: u32,
@@ -58,23 +60,15 @@ impl<'w> Drawable for Pixmap<'w> {
         self.id
     }
 
-    fn width(&self) -> u16 {
-        self.window.width()
-    }
-
-    fn height(&self) -> u16 {
-        self.window.height()
-    }
-
-    fn x(&self) -> i16 {
-        self.window.x()
-    }
-
-    fn y(&self) -> i16 {
-        self.window.y()
-    }
-
     fn depth(&self) -> u8 {
         self.depth
+    }
+    
+    fn size(&self) -> Vec2<u16> {
+        self.window.size()
+    }
+    
+    fn position(&self) -> Vec2<i16> {
+        self.window.position()
     }
 }

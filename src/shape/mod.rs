@@ -9,6 +9,7 @@ use crate::{
 
 mod rectangle;
 mod arc;
+pub mod coord;
 
 pub use rectangle::Rectangle;
 pub use arc::Arc;

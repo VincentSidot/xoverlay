@@ -1,13 +1,11 @@
 use x11rb::rust_connection::RustConnection;
+
+
 use xoverlay::{
-    Color,
-    Mapping,
-    Overlay,
+    event::Event,
     shape::{
-        Rectangle,
-        Arc,
-        Shape
-    }
+        coord::{Anchor, Coord, Size}, Arc, Rectangle, Shape
+    }, Color, Mapping, Overlay
 };
 
 use std::{
@@ -45,39 +43,37 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Create rectangles
     let rec: Vec<Box<dyn Shape<RustConnection>>> = vec![
-        Rectangle::percent(
-            0.0, 0.0,
-            0.2, 1.0, 
-            Color::RED,
-            &overlay
-        )?,
-        Rectangle::percent(
-            0.8, 0.0,
-            0.2, 1.0, 
+        Rectangle::fill(
+            Anchor::NorthWest,
+            Coord::new(0.0, 0.0),
+            Size::new(0.2, 1.0),
             Color::BLUE,
-            &overlay
         )?,
-        Arc::circle_percent(
-            0.45, 0.45,
-            0.1,
-            Color::GREEN,
-            &overlay
+        Arc::filled_circle(
+            Anchor::Center,
+            Coord::new(0.5, 0.5),
+            0.5,
+            Color::WHITE,
         )?,
-        Arc::circle_percent(
-            0.45, 0.45,
-            0.09,
-            Color::TRANSPARENT,
-            &overlay
+        Rectangle::fill(
+            Anchor::NorthEast,
+            Coord::new(1.0, 0.0),
+            Size::new(0.2, 1.0),
+            Color::RED,
         )?,
     ];
 
     // Add the rectangles to the overlay
     overlay
         .add_shapes(rec)
-        .draw()?;
+        .event_loop(|_, event| {
+            if event == Event::Unkown {
+                return
+            }
+            // Print the event
+            println!("Event: {:?}", event);
+        })?;
     
-    // Draw the overlay
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+    Ok(())
+
 }
