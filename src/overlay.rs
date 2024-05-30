@@ -210,6 +210,9 @@ impl Overlay {
     }
 
     fn refresh(&mut self, new_size: Vec2<u16>) -> Result<&mut Self, Box<dyn Error>> {
+        if new_size == self.window.size() { // No need to resize
+            return Ok(self)
+        }
         self.parent.resize_event(new_size);
         self.window.refresh(&self.conn, Some(&self.parent))?;
         Ok(self)
@@ -235,11 +238,10 @@ impl Overlay {
                 Event::Redraw => {
                     self.draw()?;
                 },
-                _ => {
-                    // Call the event handler
-                    callback(self, event);
-                }
+                _ => {}
             }
+            // Call the event handler
+            callback(self, event);
         }
     }
 

@@ -74,8 +74,9 @@ impl Event {
                 height,
                 ..
             }) => {
-                if window == overlay.parent().id() {
-                    Ok(Self::ParentResize(Vec2::new(width, height)))
+                let new_size = Vec2::new(width, height);
+                if window == overlay.parent().id() && new_size != overlay.size() {
+                    return Ok(Self::ParentResize(new_size))
                 } else {
                     Ok(Self::Unkown)
                 }

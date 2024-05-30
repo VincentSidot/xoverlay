@@ -1,4 +1,4 @@
-use x11rb::rust_connection::RustConnection;
+use x11rb::{connection::Connection, rust_connection::RustConnection};
 
 
 use xoverlay::{
@@ -43,36 +43,42 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     // Create rectangles
     let rec: Vec<Box<dyn Shape<RustConnection>>> = vec![
-        Rectangle::fill(
-            Anchor::NorthWest,
-            Coord::new(0.0, 0.0),
-            Size::new(0.2, 1.0),
-            Color::BLUE,
-        )?,
-        Arc::filled_circle(
+        // Rectangle::fill(
+        //     Anchor::NorthWest,
+        //     Coord::new(0.0, 0.0),
+        //     Size::new(0.2, 1.0),
+        //     Color::BLUE,
+        // )?,
+        Arc::circle(
             Anchor::Center,
-            Coord::new(0.5, 0.5),
-            0.5,
+            Coord::new(0.25, 0.5),
+            0.4,
             Color::WHITE,
         )?,
-        Rectangle::fill(
-            Anchor::NorthEast,
-            Coord::new(1.0, 0.0),
-            Size::new(0.2, 1.0),
-            Color::RED,
-        )?,
+        // Rectangle::fill(
+        //     Anchor::NorthEast,
+        //     Coord::new(1.0, 0.0),
+        //     Size::new(0.2, 1.0),
+        //     Color::RED,
+        // )?,
     ];
 
     // Add the rectangles to the overlay
     overlay
         .add_shapes(rec)
-        .event_loop(|_, event| {
-            if event == Event::Unkown {
-                return
-            }
-            // Print the event
-            println!("Event: {:?}", event);
-        })?;
+        .draw()?;
+        // .event_loop(|_, event| {
+        //     if event == Event::Unkown {
+        //         return
+        //     }
+        //     // Print the event
+        //     println!("Event: {:?}", event);
+        // })?;
+
+    loop {
+        let (event, seq) = overlay.conn.wait_for_event_with_sequence()?;
+        println!("[{}] Event: {:?}", seq, event);
+    }
     
     Ok(())
 

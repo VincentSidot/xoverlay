@@ -5,7 +5,7 @@ use std::error::Error;
 use x11rb::{
     connection::Connection,
     protocol::xproto::{
-        ChangeWindowAttributesAux, ConfigureWindowAux, ConnectionExt, CreateWindowAux, EventMask, Window as XWindow, WindowClass
+        ChangeWindowAttributesAux, ConfigureWindowAux, ConnectionExt, CreateWindowAux, EventMask as XEventMask, Window as XWindow, WindowClass
     }
 };
 
@@ -41,10 +41,10 @@ pub enum Mapping {
 /// 
 macro_rules! EVENT_MASK {
     (overlay) => {
-        EventMask::STRUCTURE_NOTIFY
+        XEventMask::STRUCTURE_NOTIFY
     };
     (parent) => {
-        EventMask::STRUCTURE_NOTIFY
+        XEventMask::STRUCTURE_NOTIFY
     };
 }
 
