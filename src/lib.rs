@@ -14,3 +14,4 @@ pub use drawable::{
         Mapping,
     }
 };
+pub use x11rb;
