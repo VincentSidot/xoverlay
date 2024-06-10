@@ -1,5 +1,3 @@
-
-
 fn to_rgba(value: u32) -> u32 {
     let r = (value >> 16) & 0xFF;
     let g = (value >> 8) & 0xFF;
@@ -23,59 +21,65 @@ fn for_depth(value: u32, depth: u8) -> u32 {
         24 => to_rgb(value),
         16 => value >> 16,
         8 => value >> 24,
-        1 => if value > 0 { 1 } else { 0 },
-        _ => 0
+        1 => {
+            if value > 0 {
+                1
+            } else {
+                0
+            }
+        }
+        _ => 0,
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Color {
-// A
-// B
+    // A
+    // B
     BLACK,
     BLUE,
     BROWN,
-// C
+    // C
     CYAN,
-// D
-// E
-// F
-// G
+    // D
+    // E
+    // F
+    // G
     GRAY,
     GREEN,
-// H
-// I
+    // H
+    // I
     INDIGO,
-// J
-// K
-// L
+    // J
+    // K
+    // L
     LIME,
-// M
+    // M
     MAGENTA,
-// N
+    // N
     NAVY,
-// O
+    // O
     ORANGE,
-// P
+    // P
     PINK,
     PURPLE,
-// Q
-// R
+    // Q
+    // R
     RED,
     RGB(u8, u8, u8),
     RGBA(u8, u8, u8, u8),
-// S
+    // S
     SILVER,
-// T
+    // T
     TRANSPARENT,
-// U
-// V
-// W
+    // U
+    // V
+    // W
     WHITE,
-// X
-// Y
+    // X
+    // Y
     YELLOW,
-// Z
+    // Z
 }
 
 impl Color {
@@ -104,7 +108,9 @@ impl Color {
             Color::PURPLE => for_depth(0x800080, depth),
             Color::RED => for_depth(0xFF0000, depth),
             Color::RGB(r, g, b) => ((*r as u32) << 16) | ((*g as u32) << 8) | (*b as u32),
-            Color::RGBA(r, g, b, a) => ((*a as u32) << 24) | ((*r as u32) << 16) | ((*g as u32) << 8) | (*b as u32),
+            Color::RGBA(r, g, b, a) => {
+                ((*a as u32) << 24) | ((*r as u32) << 16) | ((*g as u32) << 8) | (*b as u32)
+            }
             Color::SILVER => for_depth(0xC0C0C0, depth),
             Color::TRANSPARENT => 0,
             Color::WHITE => for_depth(0xFFFFFF, depth),
@@ -120,5 +126,4 @@ impl Color {
 
         Color::rgba(r as u8, g as u8, b as u8, alpha)
     }
-
 }

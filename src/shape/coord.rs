@@ -1,7 +1,4 @@
-use crate::math::vec::{
-    Vec2f,
-    Vec2
-};
+use crate::math::vec::{Vec2, Vec2f};
 
 /// Represents a coordinate as a percentage of the drawable's size
 pub type Coord = Vec2f;
@@ -18,32 +15,24 @@ impl CoordExt for Coord {
         let (dx, dy) = anchor.delta(size.x(), size.y());
         Coord::new(dx, dy)
     }
-    
-    fn top_left(&self, anchor: &Anchor, size: &Size) -> Self  {
+
+    fn top_left(&self, anchor: &Anchor, size: &Size) -> Self {
         let delta = Self::from_anchor(anchor, size);
         *self - delta
     }
-    
+
     fn to_real_coord<C: Into<f32> + Copy>(&self, size: Vec2<C>) -> Self {
-        Coord::new(
-            self.x * size.x.into(),
-            self.y * size.y.into()
-        )
+        Coord::new(self.x * size.x.into(), self.y * size.y.into())
     }
 }
 
 pub trait SizeExt {
-
     fn to_real_size<C: Into<f32> + Copy>(&self, size: Vec2<C>) -> Self;
-
 }
 
 impl SizeExt for Size {
     fn to_real_size<C: Into<f32> + Copy>(&self, size: Vec2<C>) -> Self {
-        Size::new(
-            self.x * size.x.into(),
-            self.y * size.y.into()
-        )
+        Size::new(self.x * size.x.into(), self.y * size.y.into())
     }
 }
 
@@ -62,7 +51,6 @@ pub enum Anchor {
 }
 
 impl Anchor {
-
     /// Returns the delta for the anchor
     /// regarding the top left corner of the shape
     /// (top left is equivalent to NorthWest anchor)
@@ -79,7 +67,6 @@ impl Anchor {
             Self::Center => (width / 2.0, height / 2.0),
             Self::Custom(x, y) => (*x, *y),
         }
-
     }
 }
 

@@ -1,59 +1,61 @@
 //! Overlay module, contains the overlay struct and its methods
 
-use std::error::Error;
+use std::{cell::RefCell, error::Error, rc::Rc, sync::Arc};
 
 use x11rb::{
     connection::Connection,
     protocol::{
-        shape::{
-            self as shape, ConnectionExt as ShapeConnectionExt
-        },
+        shape::{self as shape, ConnectionExt as ShapeConnectionExt},
         xproto::{
-            ChangeGCAux,
-            ConnectionExt,
-            CreateGCAux,
-            Drawable as XDrawable,
-            Window as XWindow
-        }
+            ChangeGCAux, ConnectionExt, CreateGCAux, Drawable as XDrawable, Window as XWindow,
+        },
     },
-    rust_connection::RustConnection
+    rust_connection::RustConnection,
 };
 
 use crate::{
     drawable::{
         pixmap::Pixmap,
-        window::{
-        Mapping,
-        Window,
-        },
-        Drawable
-    }, event::Event, math::vec::Vec2, shape::{coord::{Anchor, Coord, Size}, Rectangle, Shape}, Color
+        window::{Mapping, Window},
+        Drawable,
+    },
+    event::Event,
+    math::vec::Vec2,
+    shape::{
+        coord::{Anchor, Coord, Size},
+        Rectangle, Shape,
+    },
+    Color,
 };
 
 pub struct Overlay {
     pub conn: RustConnection,
     parent: Window,
     window: Window,
-    render_queue: Vec<Box<dyn Shape<RustConnection>>>
+    render_queue: Vec<Rc<RefCell<dyn Shape<RustConnection>>>>,
 }
 
 impl Overlay {
     /// Initialize a new overlay, binding it to the parent window
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `parent` - The parent window
     /// * `host` - The host to connect to (if None, connect to $DISPLAY)
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A new overlay struct
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// If the overlay could not be created
-    /// 
-    pub fn init(parent: XWindow, mapping: &Mapping, host: Option<&str>) -> Result<Self, Box<dyn Error>> {
+    ///
+    pub fn init(
+        parent: XWindow,
+        mapping: &Mapping,
+        host: Option<&str>,
+    ) -> Result<Self, Box<dyn Error>> {
         // Create a new connection
         let (conn, _) = x11rb::connect(host)?;
 
@@ -61,22 +63,23 @@ impl Overlay {
         let parent = Window::from(&conn, parent)?;
         let window = Window::new(&conn, &parent, mapping)?;
 
+        // Create the overlay
         Ok(Self {
             conn,
             parent,
             window,
-            render_queue: Vec::new()
+            render_queue: Vec::new(),
         })
     }
 
-    pub fn add_shape(&mut self, shape: Box<dyn Shape<RustConnection>>) -> &mut Self{
+    pub fn add_shape(&mut self, shape: Rc<RefCell<dyn Shape<RustConnection>>>) -> &mut Self {
         self.render_queue.push(shape);
         self
     }
 
     pub fn add_shapes<I>(&mut self, shapes: I) -> &mut Self
     where
-        I: IntoIterator<Item = Box<dyn Shape<RustConnection>>>
+        I: IntoIterator<Item = Rc<RefCell<dyn Shape<RustConnection>>>>,
     {
         self.render_queue.extend(shapes);
         self
@@ -94,7 +97,6 @@ impl Overlay {
 
     /// Draw the shapes in the overlay
     pub fn draw(&self) -> Result<&Self, Box<dyn Error>> {
-
         // Let's build the shape pixmap
         let pixmap = Pixmap::new(&self.conn, &self.window, Some(1))?;
 
@@ -103,17 +105,18 @@ impl Overlay {
         self.conn.create_gc(
             not_transparent_gc,
             pixmap.id(),
-            &CreateGCAux::new().foreground(1)
+            &CreateGCAux::new().foreground(1),
         )?;
         let transparent_gc = self.conn.generate_id()?;
         self.conn.create_gc(
             transparent_gc,
             pixmap.id(),
-            &CreateGCAux::new().foreground(0)
+            &CreateGCAux::new().foreground(0),
         )?;
 
         // Draw the shapes
         for shape in &self.render_queue {
+            let shape = shape.borrow();
             if shape.color() == &Color::TRANSPARENT {
                 shape.draw(&self.conn, &transparent_gc, &pixmap)?;
             } else {
@@ -128,7 +131,7 @@ impl Overlay {
             self.window.id(),
             0,
             0,
-            pixmap.id()
+            pixmap.id(),
         )?;
 
         // Free the pixmap
@@ -142,20 +145,16 @@ impl Overlay {
 
         // Create the graphics context for the shape
         let gc = self.conn.generate_id()?;
-        self.conn.create_gc(
-            gc,
-            pixmap.id(),
-            &CreateGCAux::new()
-        )?;
+        self.conn.create_gc(gc, pixmap.id(), &CreateGCAux::new())?;
 
         // Draw the pixmap to the window
         for shape in &self.render_queue {
+            let shape = shape.borrow();
             if shape.color() != &Color::TRANSPARENT {
                 // Set the color
                 self.conn.change_gc(
                     gc,
-                    &ChangeGCAux::new()
-                        .foreground(shape.color().value(pixmap.depth()))
+                    &ChangeGCAux::new().foreground(shape.color().value(pixmap.depth())),
                 )?;
                 // Draw the shape
                 shape.draw(&self.conn, &gc, &pixmap)?;
@@ -172,7 +171,7 @@ impl Overlay {
             0,
             0,
             self.window.width(),
-            self.window.height()
+            self.window.height(),
         )?;
 
         // Free the pixmap
@@ -187,43 +186,64 @@ impl Overlay {
     }
 
     /// Clear the shapes in the overlay
-    fn clear_shapes(&mut self) -> &mut Self{
+    fn clear_shapes(&mut self) -> &mut Self {
         self.render_queue.clear();
         self
     }
 
     /// Clear the overlay window
     pub fn clear(&mut self) -> Result<&mut Self, Box<dyn Error>> {
-        let rectangle = Rectangle::new(
+        // Create a new rectangle
+        let clear_rect = Rectangle::fill(
             Anchor::default(),
             Coord::new(0.0, 0.0),
             Size::new(1.0, 1.0),
-            Color::TRANSPARENT
+            Color::TRANSPARENT,
         )?;
 
         self.clear_shapes();
-        self.add_shape(rectangle);
+        self.add_shape(clear_rect);
         self.draw()?;
         self.clear_shapes();
-        
+
         Ok(self)
     }
 
     fn refresh(&mut self, new_size: Vec2<u16>) -> Result<&mut Self, Box<dyn Error>> {
-        if new_size == self.window.size() { // No need to resize
-            return Ok(self)
+        if new_size == self.window.size() {
+            // No need to resize
+            return Ok(self);
         }
         self.parent.resize_event(new_size);
         self.window.refresh(&self.conn, Some(&self.parent))?;
         Ok(self)
     }
 
-    pub fn event_loop<F>(
-        &mut self,
-        mut callback: F
-    ) -> Result<(), Box<dyn Error>>
+    fn handle_event<F>(&mut self, event: Event, mut callback: F) -> Result<(), Box<dyn Error>>
     where
-        F: FnMut(&mut Self, Event) -> ()
+        F: FnMut(&mut Self, Event) -> Option<Event>,
+    {
+        match event {
+            Event::ParentResize(size) => {
+                self.refresh(size)?.draw()?;
+            }
+            Event::Redraw => {
+                self.draw()?;
+            }
+            _ => {}
+        }
+        // Call the event handler
+        let new_event = callback(self, event);
+        // Handle the new event
+        if let Some(event) = new_event {
+            self.handle_event(event, callback)?;
+        }
+        Ok(())
+    }
+
+    pub fn event_loop<F>(&mut self, mut callback: F) -> Result<(), Box<dyn Error>>
+    where
+        F: FnMut(&mut Self, Event) -> Option<Event>,
     {
         // Draw at least once
         self.draw()?;
@@ -231,20 +251,9 @@ impl Overlay {
         loop {
             // Poll the event
             let event = Event::wait(&self)?;
-            match event {
-                Event::ParentResize(size) => {
-                    self.refresh(size)?.draw()?;
-                },
-                Event::Redraw => {
-                    self.draw()?;
-                },
-                _ => {}
-            }
-            // Call the event handler
-            callback(self, event);
+            self.handle_event(event, &mut callback)?;
         }
     }
-
 }
 
 impl Drawable for Overlay {
@@ -255,11 +264,11 @@ impl Drawable for Overlay {
     fn depth(&self) -> u8 {
         self.window.depth()
     }
-    
+
     fn size(&self) -> Vec2<u16> {
         self.window.size()
     }
-    
+
     fn position(&self) -> Vec2<i16> {
         self.window.position()
     }

@@ -1,23 +1,15 @@
-use std::error::Error;
+use std::{cell::RefCell, error::Error, rc::Rc};
 
 use x11rb::{
     connection::Connection,
-    protocol::xproto::{
-        ConnectionExt,
-        Gcontext,
-        Rectangle as XRectangle
-    }
+    protocol::xproto::{ConnectionExt, Gcontext, Rectangle as XRectangle},
 };
 
-use crate::{
-    color::Color,
-    drawable::Drawable
-};
+use crate::{color::Color, drawable::Drawable};
 
 use super::{
-    coord::{
-        Anchor, Coord, CoordExt, Size, SizeExt
-    }, Shape
+    coord::{Anchor, Coord, CoordExt, Size, SizeExt},
+    Shape,
 };
 
 pub struct Rectangle {
@@ -25,7 +17,7 @@ pub struct Rectangle {
     position: Coord,
     size: Size,
     color: Color,
-    filled: bool
+    filled: bool,
 }
 
 impl Rectangle {
@@ -34,14 +26,14 @@ impl Rectangle {
         position: Coord,
         size: Size,
         color: Color,
-    ) -> Result<Box<Self>, Box<dyn Error>> {
-        Ok(Box::new(Self {
+    ) -> Result<Rc<RefCell<Self>>, Box<dyn Error>> {
+        Ok(Rc::new(RefCell::new(Self {
             anchor,
             position,
             size,
             color,
-            filled: true
-        }))
+            filled: true,
+        })))
     }
 
     pub fn new(
@@ -49,27 +41,56 @@ impl Rectangle {
         position: Coord,
         size: Size,
         color: Color,
-    ) -> Result<Box<Self>, Box<dyn Error>> {
-        Ok(Box::new(Self {
+    ) -> Result<Rc<RefCell<Self>>, Box<dyn Error>> {
+        Ok(Rc::new(RefCell::new(Self {
             anchor,
             position,
             size,
             color,
-            filled: false
-        }))
+            filled: false,
+        })))
     }
 
+    pub fn anchor(&self) -> &Anchor {
+        &self.anchor
+    }
+
+    pub fn set_anchor(&mut self, anchor: Anchor) {
+        self.anchor = anchor;
+    }
+
+    pub fn position(&self) -> &Coord {
+        &self.position
+    }
+
+    pub fn set_position(&mut self, position: Coord) {
+        self.position = position;
+    }
+
+    pub fn size(&self) -> &Size {
+        &self.size
+    }
+
+    pub fn set_size(&mut self, size: Size) {
+        self.size = size;
+    }
+
+    pub fn color(&self) -> &Color {
+        &self.color
+    }
+
+    pub fn set_color(&mut self, color: Color) {
+        self.color = color;
+    }
 }
 
 impl<C: Connection> Shape<C> for Rectangle {
-    fn draw(
-        &self,
-        conn: &C,
-        gc: &Gcontext,
-        drawable: &dyn Drawable
-    ) -> Result<(), Box<dyn Error>> {        
+    fn draw(&self, conn: &C, gc: &Gcontext, drawable: &dyn Drawable) -> Result<(), Box<dyn Error>> {
         // Calculate the position of the rectangle
-        let coord = self.position.top_left(&self.anchor, &self.size).to_real_coord(drawable.size());
+        let coord = self
+            .position
+            .top_left(&self.anchor, &self.size)
+            .to_real_coord(drawable.size());
         let size = self.size.to_real_size(drawable.size());
 
         let (x, y) = (coord.x as i16, coord.y as i16);
@@ -84,7 +105,8 @@ impl<C: Connection> Shape<C> for Rectangle {
                     y,
                     width,
                     height,
-                }])?,
+                }],
+            )?,
             false => conn.poly_rectangle(
                 drawable.id(),
                 *gc,
@@ -93,7 +115,8 @@ impl<C: Connection> Shape<C> for Rectangle {
                     y,
                     width,
                     height,
-                }])?
+                }],
+            )?,
         };
 
         Ok(())

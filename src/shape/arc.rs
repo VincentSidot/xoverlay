@@ -2,23 +2,14 @@ use std::error::Error;
 
 use x11rb::{
     connection::Connection,
-    protocol::xproto::{
-        ConnectionExt,
-        Gcontext,
-        Arc as XArc
-    }
+    protocol::xproto::{Arc as XArc, ConnectionExt, Gcontext},
 };
 
-
-use crate::{
-    color::Color,
-    drawable::Drawable
-};
+use crate::{color::Color, drawable::Drawable};
 
 use super::{
-    coord::{
-        Anchor, Coord, CoordExt, Size, SizeExt
-    }, Shape
+    coord::{Anchor, Coord, CoordExt, Size, SizeExt},
+    Shape,
 };
 
 pub struct Arc {
@@ -32,7 +23,6 @@ pub struct Arc {
 }
 
 impl Arc {
-
     pub fn new(
         anchor: Anchor,
         position: Coord,
@@ -48,7 +38,7 @@ impl Arc {
             start_angle,
             end_angle,
             color,
-            filled: false
+            filled: false,
         }))
     }
 
@@ -67,7 +57,7 @@ impl Arc {
             start_angle,
             end_angle,
             color,
-            filled: true
+            filled: true,
         }))
     }
 
@@ -84,7 +74,7 @@ impl Arc {
             start_angle: 0.0,
             end_angle: 360.0,
             color,
-            filled: false
+            filled: false,
         }))
     }
 
@@ -101,17 +91,17 @@ impl Arc {
             start_angle: 0.0,
             end_angle: 360.0,
             color,
-            filled: true
+            filled: true,
         }))
     }
-
 }
 
 impl<C: Connection> Shape<C> for Arc {
-
-    fn draw(&self, conn: &C, gc: &Gcontext, drawable: &dyn Drawable) ->Result<(), Box<dyn Error>> {
-
-        let coord = self.position.top_left(&self.anchor, &self.size).to_real_coord(drawable.size());
+    fn draw(&self, conn: &C, gc: &Gcontext, drawable: &dyn Drawable) -> Result<(), Box<dyn Error>> {
+        let coord = self
+            .position
+            .top_left(&self.anchor, &self.size)
+            .to_real_coord(drawable.size());
         let size = self.size.to_real_size(drawable.size());
 
         let (x, y) = (coord.x as i16, coord.y as i16);
@@ -128,7 +118,7 @@ impl<C: Connection> Shape<C> for Arc {
                     height,
                     angle1: (self.start_angle * 64.0) as i16,
                     angle2: (self.end_angle * 64.0) as i16,
-                }]
+                }],
             )?,
             false => conn.poly_arc(
                 drawable.id(),
@@ -140,8 +130,8 @@ impl<C: Connection> Shape<C> for Arc {
                     height,
                     angle1: (self.start_angle * 64.0) as i16,
                     angle2: (self.end_angle * 64.0) as i16,
-                }]
-            )?
+                }],
+            )?,
         };
 
         Ok(())

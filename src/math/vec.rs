@@ -13,9 +13,9 @@ pub type Vec2i = Vec2<i32>;
 pub type Vec2u = Vec2<u32>;
 
 /// Implements the Add trait for Vec2
-impl<T> ops::Add<Vec2<T>> for Vec2<T> 
-where T:
-    ops::Add<Output = T> + Copy
+impl<T> ops::Add<Vec2<T>> for Vec2<T>
+where
+    T: ops::Add<Output = T> + Copy,
 {
     type Output = Vec2<T>;
 
@@ -28,9 +28,9 @@ where T:
 }
 
 /// Implements the Sub trait for Vec2
-impl<T> ops::Sub<Vec2<T>> for Vec2<T> 
-where T:
-    ops::Sub<Output = T> + Copy
+impl<T> ops::Sub<Vec2<T>> for Vec2<T>
+where
+    T: ops::Sub<Output = T> + Copy,
 {
     type Output = Vec2<T>;
 
@@ -43,9 +43,9 @@ where T:
 }
 
 /// Implements the Scalar Mul trait for Vec2
-impl<T> ops::Mul<T> for Vec2<T> 
-where T:
-    ops::Mul<Output = T> + Copy
+impl<T> ops::Mul<T> for Vec2<T>
+where
+    T: ops::Mul<Output = T> + Copy,
 {
     type Output = Vec2<T>;
 
@@ -59,21 +59,20 @@ where T:
 
 /// Implements the Dot product for Vec2 (Vec2 * Vec2 -> Scalar)
 impl<T> ops::Mul<Vec2<T>> for Vec2<T>
-where T:
-    ops::Mul<Output = T> + ops::Add<Output = T> + Copy
+where
+    T: ops::Mul<Output = T> + ops::Add<Output = T> + Copy,
 {
     type Output = T;
 
     fn mul(self, rhs: Vec2<T>) -> Self::Output {
         self.x * rhs.x + self.y * rhs.y
     }
-
 }
 
 /// Implements the Scalar Div trait for Vec2
-impl<T> ops::Div<T> for Vec2<T> 
-where T:
-    ops::Div<Output = T> + Copy
+impl<T> ops::Div<T> for Vec2<T>
+where
+    T: ops::Div<Output = T> + Copy,
 {
     type Output = Vec2<T>;
 
@@ -86,9 +85,9 @@ where T:
 }
 
 /// Implements the Neg trait for Vec2
-impl<T> ops::Neg for Vec2<T> 
-where T:
-    ops::Neg<Output = T> + Copy
+impl<T> ops::Neg for Vec2<T>
+where
+    T: ops::Neg<Output = T> + Copy,
 {
     type Output = Vec2<T>;
 
@@ -101,8 +100,9 @@ where T:
 }
 
 /// Implements the PartialEq trait for Vec2
-impl<T> PartialEq for Vec2<T> 
-where T: PartialEq
+impl<T> PartialEq for Vec2<T>
+where
+    T: PartialEq,
 {
     fn eq(&self, other: &Self) -> bool {
         self.x == other.x && self.y == other.y
@@ -110,8 +110,7 @@ where T: PartialEq
 }
 
 /// Implements From trait for Vec2
-impl<T> From<(T, T)> for Vec2<T>
-{
+impl<T> From<(T, T)> for Vec2<T> {
     fn from((x, y): (T, T)) -> Self {
         Vec2 { x, y }
     }
@@ -119,17 +118,20 @@ impl<T> From<(T, T)> for Vec2<T>
 
 impl<T> From<[T; 2]> for Vec2<T>
 where
-    T: Copy
+    T: Copy,
 {
     fn from(value: [T; 2]) -> Self {
-        Vec2 { x: value[0], y: value[1] }
+        Vec2 {
+            x: value[0],
+            y: value[1],
+        }
     }
 }
 
 // Implement convertion to tuple
 impl<T> From<Vec2<T>> for (T, T)
 where
-    T: Copy
+    T: Copy,
 {
     fn from(vec: Vec2<T>) -> Self {
         (vec.x, vec.y)
@@ -138,7 +140,7 @@ where
 
 impl<T> From<Vec2<T>> for [T; 2]
 where
-    T: Copy
+    T: Copy,
 {
     fn from(vec: Vec2<T>) -> Self {
         [vec.x, vec.y]
@@ -146,8 +148,9 @@ where
 }
 
 /// Implements basic operations for Vec2
-impl<T> Vec2<T> 
-where T: Copy
+impl<T> Vec2<T>
+where
+    T: Copy,
 {
     /// Returns the x component of the Vec2
     pub fn x(&self) -> T {
@@ -176,8 +179,9 @@ where T: Copy
 }
 
 /// Implements the euclidean space operations for Vec2
-impl<T> Vec2<T> 
-where T: ops::Mul<Output = T> + ops::Add<Output = T> + Copy
+impl<T> Vec2<T>
+where
+    T: ops::Mul<Output = T> + ops::Add<Output = T> + Copy,
 {
     /// Returns the dot product of two Vec2
     pub fn dot(&self, rhs: Vec2<T>) -> T {
@@ -186,14 +190,16 @@ where T: ops::Mul<Output = T> + ops::Add<Output = T> + Copy
 
     /// Returns the euclidean length of the Vec2
     pub fn length(&self) -> f32
-    where T: Into<f32>
+    where
+        T: Into<f32>,
     {
         (self.x.into().powi(2) + self.y.into().powi(2)).sqrt()
     }
 
     /// Returns the squared euclidean length of the Vec2 (faster than length)
     pub fn fast_length(&self) -> f32
-    where T: Into<f32>
+    where
+        T: Into<f32>,
     {
         let x = self.x.into();
         let y = self.y.into();
@@ -202,7 +208,8 @@ where T: ops::Mul<Output = T> + ops::Add<Output = T> + Copy
 
     /// Returns the normalized Vec2 (length = 1)
     pub fn normalize(&self) -> Vec2<f32>
-    where T: Into<f32>
+    where
+        T: Into<f32>,
     {
         let length = self.length();
         Vec2 {
