@@ -1,12 +1,9 @@
-use x11rb::protocol::xproto::KeyButMask;
+
 use xoverlay::{
-    event::Event,
-    key::{Key, KeyRef},
-    shape::{
+    event::Event, key::{Key, KeyRef}, shape::{
         coord::{Anchor, Coord, Size},
         Rectangle,
-    },
-    Color, Drawable, Mapping, Overlay,
+    }, Color, Drawable, Mapping, Overlay
 };
 
 use std::{env, error::Error};
@@ -62,6 +59,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let mut rec = rec.borrow_mut();
                 rec.set_position(coord);
                 Some(Event::Redraw)
+            }
+            Event::KeyPress(Key{
+                key: KeyRef::ArrowUp
+            }) => {
+                println!("ArrowUp pressed");
+                Some(Event::StopEventLoop)
             }
             _ => {
                 // Print the event

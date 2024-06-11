@@ -6,20 +6,12 @@ use x11rb::{
     connection::Connection,
     protocol::{
         xinput::{
-            ConnectionExt as _,
-            DeviceUse,
-            EventMask as XIEventMask,
-            XIEventMask as XIEventMaskRef,
-        }, xproto::{
-            ChangeWindowAttributesAux,
-            ConfigureWindowAux,
-            ConnectionExt as _,
-            CreateWindowAux,
-            EventMask as XEventMask,
-            Window as XWindow,
-            WindowClass
-        }
-    }
+            ConnectionExt as _, DeviceUse, EventMask as XIEventMask, XIEventMask as XIEventMaskRef,
+        },
+        xproto::{
+            AtomEnum, ChangeWindowAttributesAux, ConfigureWindowAux, ConnectionExt as _, CreateWindowAux, EventMask as XEventMask, Window as XWindow, WindowClass
+        },
+    },
 };
 
 use crate::math::vec::Vec2;
@@ -54,10 +46,18 @@ macro_rules! EVENT_MASK {
     };
 }
 
+x11rb::atom_manager! {
+    Atoms:
+    AtomsCookie {
+        _NET_ACTIVE_WINDOW,
+    }
+}
+
 #[derive(Debug)]
 pub struct Window {
     depth: u8,
     id: XWindow,
+    root: XWindow,
     mapping: Mapping,
     pos: Vec2<i16>,
     size: Vec2<u16>,
@@ -130,13 +130,14 @@ impl Window {
             0,
             &CreateWindowAux::new()
                 .override_redirect(1)
-                // .event_mask(EVENT_MASK!(overlay)),
+                .event_mask(EVENT_MASK!(overlay)),
         )?;
 
         conn.map_window(xwindow)?;
 
         Ok(Self {
             id: xwindow,
+            root: parent.root,
             depth,
             pos: (x, y).into(),
             size: (width, height).into(),
@@ -222,8 +223,11 @@ impl Window {
         Ok(())
     }
 
-    pub fn from<C: Connection>(conn: &C, id: XWindow, root: XWindow) -> Result<Self, Box<dyn Error>> {
-
+    pub fn from<C: Connection>(
+        conn: &C,
+        id: XWindow,
+        root: XWindow,
+    ) -> Result<Self, Box<dyn Error>> {
         // Fetch the window geometry
         let (depth, width, height, x, y) = {
             let geometry = conn.get_geometry(id)?.reply()?;
@@ -245,48 +249,45 @@ impl Window {
 
         // Allow device events (mouse and keyboard) with xinput
         let devices = conn.xinput_list_input_devices()?.reply()?;
-        for device in devices.devices {            
+        for device in devices.devices {
             match device {
                 device if device.device_use == DeviceUse::IS_X_KEYBOARD => {
                     println!("Device {} is a keyboard", device.device_id);
                     conn.xinput_xi_select_events(
                         root,
-                        &[XIEventMask{
+                        &[XIEventMask {
                             deviceid: device.device_id as u16,
-                            mask: vec![
-                                XIEventMaskRef::RAW_KEY_PRESS,
-                            ], 
+                            mask: vec![XIEventMaskRef::RAW_KEY_PRESS],
                         }],
-                    )?.check()?;
+                    )?
+                    .check()?;
                 }
                 device if device.device_use == DeviceUse::IS_X_POINTER => {
                     println!("Device {} is a pointer", device.device_id);
                     conn.xinput_xi_select_events(
                         id,
-                        &[XIEventMask{
+                        &[XIEventMask {
                             deviceid: device.device_id as u16,
-                            mask: vec![
-                                XIEventMaskRef::MOTION,
-                            ], 
+                            mask: vec![XIEventMaskRef::MOTION],
                         }],
-                    )?.check()?;
+                    )?
+                    .check()?;
                     conn.xinput_xi_select_events(
-                        id,
-                        &[XIEventMask{
+                        root,
+                        &[XIEventMask {
                             deviceid: device.device_id as u16,
-                            mask: vec![
-                                XIEventMaskRef::RAW_BUTTON_PRESS,
-                            ], 
+                            mask: vec![XIEventMaskRef::RAW_BUTTON_PRESS],
                         }],
-                    )?.check()?;
+                    )?
+                    .check()?;
                 }
                 _ => {}
             }
-        }        
-
+        }
 
         Ok(Self {
             id,
+            root,
             depth,
             pos: (x, y).into(),
             size: (width, height).into(),
@@ -299,6 +300,29 @@ impl Window {
     /// This method is called by the event handler when the window is resized
     pub fn resize_event(&mut self, size: Vec2<u16>) {
         self.size = size;
+    }
+
+    pub fn has_focus<C: Connection>(&self, conn: &C) -> Result<bool, Box<dyn Error>> {
+        // Fetch atom _NET_ACTIVE_WINDOW from the root window
+        let atom = Atoms::new(conn)?.reply()?;
+        if let Some(mut selected) = conn.get_property(
+            false,
+            self.root,
+            atom._NET_ACTIVE_WINDOW,
+            AtomEnum::WINDOW,
+            0,
+            1,
+        )?
+        .reply()?
+        .value32()  {
+            if let Some(selected) = selected.next() {
+                Ok(selected == self.id)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Ok(false)
+        }
     }
 }
 

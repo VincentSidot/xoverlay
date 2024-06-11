@@ -2,11 +2,7 @@ use std::{error::Error, fmt::Debug};
 
 use x11rb::{
     connection::Connection,
-    protocol::{
-        xproto::ConfigureNotifyEvent,
-        xinput::ButtonPressEvent,
-        Event as XEvent,
-    },
+    protocol::{xinput::{ButtonPressEvent, RawKeyPressEvent}, xproto::ConfigureNotifyEvent, Event as XEvent},
 };
 
 use crate::{key::Key, math::vec::Vec2, shape::coord::Coord, Drawable, Overlay};
@@ -26,6 +22,7 @@ pub enum Event {
     KeyPress(Key),
     KeyRelease(Key),
     Redraw,
+    StopEventLoop,
     Nothing,
     Unkown,
 }
@@ -38,23 +35,31 @@ impl Event {
             XEvent::XinputMotion(ButtonPressEvent {
                 event_x,
                 event_y,
-                button_mask,
                 ..
             }) => {
                 // ButtonPressEvent define event_x and event_y as i32
                 // But they are actually u16 values
                 // So we convert to u16 values using modulo
-                let (x, y) = (
-                    event_x % (u16::MAX as i32),
-                    event_y % (u16::MAX as i32)
-                );
+                let (x, y) = (event_x % (u16::MAX as i32), event_y % (u16::MAX as i32));
                 let screen = overlay.size();
-                let coord = Coord::new( // Convert to f32 as Coord as percentage values
+                let coord = Coord::new(
+                    // Convert to f32 as Coord as percentage values
                     x as f32 / screen.x as f32,
-                    y as f32 / screen.y as f32
+                    y as f32 / screen.y as f32,
                 );
-                println!("Button mask: {:?}", button_mask);
                 Ok(Self::MouseMotion { coord })
+            }
+            XEvent::XinputRawKeyPress(RawKeyPressEvent{
+                detail,
+                ..
+            }) => {
+                // Check if parent window is the source of the event
+                if !overlay.has_focus()? {
+                    return Ok(Self::Nothing);
+                }
+
+                let key = Key::from_xorg_raw(detail as u8);
+                Ok(Self::KeyPress(key))
             }
             XEvent::ConfigureNotify(ConfigureNotifyEvent {
                 window,

@@ -222,7 +222,7 @@ impl Overlay {
         Ok(self)
     }
 
-    fn handle_event<F>(&mut self, event: Event, mut callback: F) -> Result<(), Box<dyn Error>>
+    fn handle_event<F>(&mut self, event: Event, mut callback: F) -> Result<bool, Box<dyn Error>>
     where
         F: FnMut(&mut Self, Event) -> Option<Event>,
     {
@@ -233,29 +233,39 @@ impl Overlay {
             Event::Redraw => {
                 self.draw()?;
             }
+            Event::StopEventLoop => {
+                return Ok(false);
+            }
             _ => {}
         }
         // Call the event handler
         let new_event = callback(self, event);
         // Handle the new event
         if let Some(event) = new_event {
-            self.handle_event(event, callback)?;
+            self.handle_event(event, callback)
+        } else {
+            Ok(true) // Continue the event loop as event does not trigger an event
         }
-        Ok(())
     }
 
     pub fn event_loop<F>(&mut self, mut callback: F) -> Result<(), Box<dyn Error>>
     where
         F: FnMut(&mut Self, Event) -> Option<Event>,
     {
+        let mut is_running = true;
         // Draw at least once
         self.draw()?;
         // Main event loop
-        loop {
+        while is_running {
             // Poll the event
             let event = Event::wait(&self)?;
-            self.handle_event(event, &mut callback)?;
+            is_running = self.handle_event(event, &mut callback)?;
         }
+        Ok(())
+    }
+
+    pub fn has_focus(&self) -> Result<bool, Box<dyn Error>> {
+        self.parent.has_focus(&self.conn)
     }
 }
 

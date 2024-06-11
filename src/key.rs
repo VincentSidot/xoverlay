@@ -1,5 +1,3 @@
-use x11rb::protocol::xproto::KeyButMask;
-
 #[derive(Debug, PartialEq)]
 pub enum KeyRef {
     ArrowUp = 111,
@@ -13,11 +11,10 @@ pub enum KeyRef {
 #[derive(Debug, PartialEq)]
 pub struct Key {
     pub key: KeyRef,
-    pub modifiers: KeyButMask,
 }
 
 impl Key {
-    pub fn from_xorg_raw(detail: u8, modifiers: KeyButMask) -> Self {
+    pub fn from_xorg_raw(detail: u8) -> Self {
         // Compute key
         let key = match detail {
             111 => KeyRef::ArrowUp,
@@ -26,6 +23,6 @@ impl Key {
             113 => KeyRef::ArrowLeft,
             _ => KeyRef::Unkown,
         };
-        Self { key, modifiers }
+        Self { key }
     }
 }
