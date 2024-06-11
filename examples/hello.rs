@@ -4,13 +4,12 @@ use xoverlay::{
     key::{Key, KeyRef},
     shape::{
         coord::{Anchor, Coord, Size},
-        Rectangle, Shape,
+        Rectangle,
     },
-    x11rb::rust_connection::RustConnection,
     Color, Drawable, Mapping, Overlay,
 };
 
-use std::{env, error::Error, rc::Rc, sync::Arc};
+use std::{env, error::Error};
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Fetch window from argument
@@ -59,56 +58,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Add the rectangles to the overlay
     overlay.add_shape(rec.clone()).event_loop(|_, event| {
         match event {
-            Event::KeyPress(Key { key, modifiers }) => {
+            Event::MouseMotion { coord } => {
                 let mut rec = rec.borrow_mut();
-                const STEP: f32 = 0.01;
-                let is_resize = if modifiers.contains(KeyButMask::CONTROL) {
-                    true
-                } else {
-                    false
-                };
-                let mut size = *rec.size();
-                let mut pos = *rec.position();
-                match key {
-                    KeyRef::ArrowUp => {
-                        if is_resize {
-                            size.y += STEP;
-                        } else {
-                            pos.y -= STEP;
-                        }
-                    }
-                    KeyRef::ArrowDown => {
-                        if is_resize {
-                            size.y -= STEP;
-                        } else {
-                            pos.y += STEP;
-                        }
-                    }
-                    KeyRef::ArrowLeft => {
-                        if is_resize {
-                            size.x -= STEP;
-                        } else {
-                            pos.x -= STEP;
-                        }
-                    }
-                    KeyRef::ArrowRight => {
-                        if is_resize {
-                            size.x += STEP;
-                        } else {
-                            pos.x += STEP;
-                        }
-                    }
-                    _ => return None, // Ignore other keys
-                }
-                rec.set_position(pos);
-                rec.set_size(size);
-
-                // Redraw the overlay
+                rec.set_position(coord);
                 Some(Event::Redraw)
             }
             _ => {
                 // Print the event
-                println!("Event: {:?}", event);
+                // println!("Event: {:?}", event);
                 None
             }
         }

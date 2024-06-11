@@ -1,6 +1,6 @@
 //! Overlay module, contains the overlay struct and its methods
 
-use std::{cell::RefCell, error::Error, rc::Rc, sync::Arc};
+use std::{cell::RefCell, error::Error, rc::Rc};
 
 use x11rb::{
     connection::Connection,
@@ -57,10 +57,13 @@ impl Overlay {
         host: Option<&str>,
     ) -> Result<Self, Box<dyn Error>> {
         // Create a new connection
-        let (conn, _) = x11rb::connect(host)?;
+        let (conn, screen_num) = x11rb::connect(host)?;
+
+        // Fetch the root window
+        let root = (&conn).setup().roots[screen_num].root;
 
         // Create a new window
-        let parent = Window::from(&conn, parent)?;
+        let parent = Window::from(&conn, parent, root)?;
         let window = Window::new(&conn, &parent, mapping)?;
 
         // Create the overlay

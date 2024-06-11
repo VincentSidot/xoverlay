@@ -3,7 +3,8 @@ use std::{error::Error, fmt::Debug};
 use x11rb::{
     connection::Connection,
     protocol::{
-        xproto::{ButtonPressEvent, ConfigureNotifyEvent, KeyButMask, KeyPressEvent},
+        xproto::ConfigureNotifyEvent,
+        xinput::ButtonPressEvent,
         Event as XEvent,
     },
 };
@@ -21,8 +22,11 @@ pub enum Button {
 pub enum Event {
     ParentResize(Vec2<u16>),
     MousePress { button: Button, coord: Coord },
+    MouseMotion { coord: Coord },
     KeyPress(Key),
+    KeyRelease(Key),
     Redraw,
+    Nothing,
     Unkown,
 }
 
@@ -31,44 +35,26 @@ impl Event {
         let xevent = overlay.conn.wait_for_event()?;
 
         match xevent {
-            XEvent::ButtonPress(ButtonPressEvent {
-                same_screen: true,
+            XEvent::XinputMotion(ButtonPressEvent {
                 event_x,
                 event_y,
-                state,
+                button_mask,
                 ..
             }) => {
-                println!(
-                    "ButtonPress event: x: {}, y: {}, state: {:?}",
-                    event_x, event_y, state
+                // ButtonPressEvent define event_x and event_y as i32
+                // But they are actually u16 values
+                // So we convert to u16 values using modulo
+                let (x, y) = (
+                    event_x % (u16::MAX as i32),
+                    event_y % (u16::MAX as i32)
                 );
-                let button = match state {
-                    KeyButMask::BUTTON1 => Button::Left,
-                    KeyButMask::BUTTON2 => Button::Right,
-                    KeyButMask::BUTTON3 => Button::Middle,
-                    _ => return Ok(Self::Unkown),
-                };
-
-                // Ensure the event is within the window
-                let (xpos, ypos) = overlay.position().into();
-                let (width, height) = overlay.size().into();
-
-                if event_x < xpos
-                    || event_x > xpos + width as i16
-                    || event_y < ypos
-                    || event_y > ypos + height as i16
-                {
-                    return Ok(Self::Unkown);
-                }
-
-                // Calculate the relative position
-                let relative = overlay.position() - Vec2::new(event_x, event_y);
-                let coord = Coord::new(
-                    relative.x as f32 / width as f32,
-                    relative.y as f32 / height as f32,
+                let screen = overlay.size();
+                let coord = Coord::new( // Convert to f32 as Coord as percentage values
+                    x as f32 / screen.x as f32,
+                    y as f32 / screen.y as f32
                 );
-
-                Ok(Self::MousePress { button, coord })
+                println!("Button mask: {:?}", button_mask);
+                Ok(Self::MouseMotion { coord })
             }
             XEvent::ConfigureNotify(ConfigureNotifyEvent {
                 window,
@@ -83,10 +69,8 @@ impl Event {
                     Ok(Self::Unkown)
                 }
             }
-            XEvent::KeyPress(KeyPressEvent { detail, state, .. }) => {
-                Ok(Self::KeyPress(Key::from_xorg_raw(detail, state)))
-            }
             XEvent::MapNotify(_) => Ok(Self::Redraw),
+            XEvent::NoExposure(_) => Ok(Self::Redraw),
             _ => {
                 println!("Unkown event: {:?}", xevent);
                 Ok(Self::Unkown)

@@ -4,10 +4,22 @@ use std::error::Error;
 
 use x11rb::{
     connection::Connection,
-    protocol::xproto::{
-        ChangeWindowAttributesAux, ConfigureWindowAux, ConnectionExt, CreateWindowAux,
-        EventMask as XEventMask, Window as XWindow, WindowClass,
-    },
+    protocol::{
+        xinput::{
+            ConnectionExt as _,
+            DeviceUse,
+            EventMask as XIEventMask,
+            XIEventMask as XIEventMaskRef,
+        }, xproto::{
+            ChangeWindowAttributesAux,
+            ConfigureWindowAux,
+            ConnectionExt as _,
+            CreateWindowAux,
+            EventMask as XEventMask,
+            Window as XWindow,
+            WindowClass
+        }
+    }
 };
 
 use crate::math::vec::Vec2;
@@ -35,10 +47,10 @@ pub enum Mapping {
 ///
 macro_rules! EVENT_MASK {
     (overlay) => {
-        XEventMask::STRUCTURE_NOTIFY
+        XEventMask::STRUCTURE_NOTIFY          // Notify when the parent window is resized
     };
     (parent) => {
-        XEventMask::STRUCTURE_NOTIFY | XEventMask::KEY_PRESS
+        XEventMask::STRUCTURE_NOTIFY          // Notify when the parent window is resized          // Notify when the focus changes
     };
 }
 
@@ -118,7 +130,7 @@ impl Window {
             0,
             &CreateWindowAux::new()
                 .override_redirect(1)
-                .event_mask(EVENT_MASK!(overlay)),
+                // .event_mask(EVENT_MASK!(overlay)),
         )?;
 
         conn.map_window(xwindow)?;
@@ -210,11 +222,7 @@ impl Window {
         Ok(())
     }
 
-    pub fn from<C: Connection>(conn: &C, id: XWindow) -> Result<Self, Box<dyn Error>> {
-        // Fetch the window attributes
-        let rep = conn.get_window_attributes(id)?.reply()?;
-        // Display the event mask
-        println!("Event mask: {:?}", rep.all_event_masks);
+    pub fn from<C: Connection>(conn: &C, id: XWindow, root: XWindow) -> Result<Self, Box<dyn Error>> {
 
         // Fetch the window geometry
         let (depth, width, height, x, y) = {
@@ -229,13 +237,53 @@ impl Window {
             )
         };
 
-        // Add the EventMask::STRUCTURE_NOTIFY to the window event mask
-        // So we are able to catch the resize event and update the window
-        // size
+        // Add event mask for parent window
         conn.change_window_attributes(
             id,
             &ChangeWindowAttributesAux::new().event_mask(EVENT_MASK!(parent)),
         )?;
+
+        // Allow device events (mouse and keyboard) with xinput
+        let devices = conn.xinput_list_input_devices()?.reply()?;
+        for device in devices.devices {            
+            match device {
+                device if device.device_use == DeviceUse::IS_X_KEYBOARD => {
+                    println!("Device {} is a keyboard", device.device_id);
+                    conn.xinput_xi_select_events(
+                        root,
+                        &[XIEventMask{
+                            deviceid: device.device_id as u16,
+                            mask: vec![
+                                XIEventMaskRef::RAW_KEY_PRESS,
+                            ], 
+                        }],
+                    )?.check()?;
+                }
+                device if device.device_use == DeviceUse::IS_X_POINTER => {
+                    println!("Device {} is a pointer", device.device_id);
+                    conn.xinput_xi_select_events(
+                        id,
+                        &[XIEventMask{
+                            deviceid: device.device_id as u16,
+                            mask: vec![
+                                XIEventMaskRef::MOTION,
+                            ], 
+                        }],
+                    )?.check()?;
+                    conn.xinput_xi_select_events(
+                        id,
+                        &[XIEventMask{
+                            deviceid: device.device_id as u16,
+                            mask: vec![
+                                XIEventMaskRef::RAW_BUTTON_PRESS,
+                            ], 
+                        }],
+                    )?.check()?;
+                }
+                _ => {}
+            }
+        }        
+
 
         Ok(Self {
             id,
