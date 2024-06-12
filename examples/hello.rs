@@ -34,12 +34,23 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("Parent window: {:#x}", overlay.parent().id());
     println!("Overlay window: {:#x}", overlay.window().id());
 
+    let color_tab = [
+        Color::RED,
+        Color::GREEN,
+        Color::BLUE,
+        Color::YELLOW,
+        Color::CYAN,
+        Color::MAGENTA,
+        Color::WHITE,
+    ];
+    let mut current_color = 0;
+
     // Create rectangles
     let rec = Rectangle::fill(
         Anchor::Center,
         Coord::new(0.5, 0.5),
         Size::new(0.1, 0.1),
-        Color::BLUE,
+        color_tab[current_color],
     )?;
 
     // let to_draw : Vec<&dyn Shape<RustConnection>> = vec![
@@ -65,6 +76,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             }) => {
                 println!("ArrowUp pressed");
                 Some(Event::StopEventLoop)
+            }
+            Event::MousePress { button, coord } => {
+                println!("MousePress: {:?} at {:?}", button, coord);
+                current_color = (current_color + 1) % color_tab.len();
+
+                let mut rec = rec.borrow_mut();
+                rec.set_color(color_tab[current_color]);
+
+                Some(Event::Redraw)
             }
             _ => {
                 // Print the event

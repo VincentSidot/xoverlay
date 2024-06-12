@@ -32,7 +32,7 @@ fn for_depth(value: u32, depth: u8) -> u32 {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Color {
     // A
     // B

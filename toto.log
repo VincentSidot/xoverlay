@@ -1,0 +1,348 @@
+⎡ Virtual core pointer                    	id=2	[master pointer  (3)]
+⎜   ↳ Virtual core XTEST pointer              	id=4	[slave  pointer  (2)]
+⎜   ↳ TigerVNC pointer                        	id=6	[slave  pointer  (2)]
+⎣ Virtual core keyboard                   	id=3	[master keyboard (2)]
+    ↳ Virtual core XTEST keyboard             	id=5	[slave  keyboard (3)]
+    ↳ TigerVNC keyboard                       	id=7	[slave  keyboard (3)]
+EVENT type 14 (RawKeyRelease)
+    device: 3 (7)
+    time:   2936616221
+    detail: 36
+    valuators:
+
+EVENT type 3 (KeyRelease)
+    device: 7 (7)
+    time: 2936616221
+    detail: 36
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 15 (RawButtonPress)
+    device: 2 (6)
+    time:   2936617626
+    detail: 1
+    flags: 
+    valuators:
+
+EVENT type 4 (ButtonPress)
+    device: 6 (6)
+    time: 2936617626
+    detail: 1
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 7 (Enter)
+    device: 6 (6)
+    time:   2936617626
+    windows: root 0x3f7 event 0x3f7 child 0x0
+    mode: NotifyGrab (detail NotifyInferior)
+    flags:  [same screen]
+    buttons: 1
+    modifiers: locked 0x10 latched 0 base 0 effective: 0
+    group: locked 0 latched 0 base 0 effective: 0
+    root x/y:  1535.00 / 419.00
+    event x/y: 1535.00 / 419.00
+EVENT type 16 (RawButtonRelease)
+    device: 2 (6)
+    time:   2936617695
+    detail: 1
+    flags: 
+    valuators:
+
+EVENT type 5 (ButtonRelease)
+    device: 6 (6)
+    time: 2936617695
+    detail: 1
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons: 1
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 8 (Leave)
+    device: 6 (6)
+    time:   2936617695
+    windows: root 0x3f7 event 0x3f7 child 0x0
+    mode: NotifyUngrab (detail NotifyInferior)
+    flags:  [same screen]
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0
+    group: locked 0 latched 0 base 0 effective: 0
+    root x/y:  1535.00 / 419.00
+    event x/y: 1535.00 / 419.00
+EVENT type 15 (RawButtonPress)
+    device: 2 (6)
+    time:   2936618351
+    detail: 3
+    flags: 
+    valuators:
+
+EVENT type 4 (ButtonPress)
+    device: 6 (6)
+    time: 2936618351
+    detail: 3
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 7 (Enter)
+    device: 6 (6)
+    time:   2936618351
+    windows: root 0x3f7 event 0x3f7 child 0x0
+    mode: NotifyGrab (detail NotifyInferior)
+    flags:  [same screen]
+    buttons: 3
+    modifiers: locked 0x10 latched 0 base 0 effective: 0
+    group: locked 0 latched 0 base 0 effective: 0
+    root x/y:  1535.00 / 419.00
+    event x/y: 1535.00 / 419.00
+EVENT type 16 (RawButtonRelease)
+    device: 2 (6)
+    time:   2936618429
+    detail: 3
+    flags: 
+    valuators:
+
+EVENT type 5 (ButtonRelease)
+    device: 6 (6)
+    time: 2936618429
+    detail: 3
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons: 3
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 8 (Leave)
+    device: 6 (6)
+    time:   2936618429
+    windows: root 0x3f7 event 0x3f7 child 0x0
+    mode: NotifyUngrab (detail NotifyInferior)
+    flags:  [same screen]
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0
+    group: locked 0 latched 0 base 0 effective: 0
+    root x/y:  1535.00 / 419.00
+    event x/y: 1535.00 / 419.00
+EVENT type 15 (RawButtonPress)
+    device: 2 (6)
+    time:   2936619634
+    detail: 2
+    flags: 
+    valuators:
+
+EVENT type 4 (ButtonPress)
+    device: 6 (6)
+    time: 2936619634
+    detail: 2
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 7 (Enter)
+    device: 6 (6)
+    time:   2936619634
+    windows: root 0x3f7 event 0x3f7 child 0x0
+    mode: NotifyGrab (detail NotifyInferior)
+    flags:  [same screen]
+    buttons: 2
+    modifiers: locked 0x10 latched 0 base 0 effective: 0
+    group: locked 0 latched 0 base 0 effective: 0
+    root x/y:  1535.00 / 419.00
+    event x/y: 1535.00 / 419.00
+EVENT type 16 (RawButtonRelease)
+    device: 2 (6)
+    time:   2936619816
+    detail: 2
+    flags: 
+    valuators:
+
+EVENT type 5 (ButtonRelease)
+    device: 6 (6)
+    time: 2936619816
+    detail: 2
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons: 2
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 8 (Leave)
+    device: 6 (6)
+    time:   2936619816
+    windows: root 0x3f7 event 0x3f7 child 0x0
+    mode: NotifyUngrab (detail NotifyInferior)
+    flags:  [same screen]
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0
+    group: locked 0 latched 0 base 0 effective: 0
+    root x/y:  1535.00 / 419.00
+    event x/y: 1535.00 / 419.00
+EVENT type 13 (RawKeyPress)
+    device: 3 (7)
+    time:   2936620928
+    detail: 37
+    valuators:
+
+EVENT type 2 (KeyPress)
+    device: 7 (7)
+    time: 2936620928
+    detail: 37
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 13 (RawKeyPress)
+    device: 3 (7)
+    time:   2936620929
+    detail: 54
+    valuators:
+
+EVENT type 2 (KeyPress)
+    device: 7 (7)
+    time: 2936620929
+    detail: 54
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0x4 effective: 0x14
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 14 (RawKeyRelease)
+    device: 3 (7)
+    time:   2936621007
+    detail: 54
+    valuators:
+
+EVENT type 3 (KeyRelease)
+    device: 7 (7)
+    time: 2936621007
+    detail: 54
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0x4 effective: 0x14
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 14 (RawKeyRelease)
+    device: 3 (7)
+    time:   2936621045
+    detail: 37
+    valuators:
+
+EVENT type 3 (KeyRelease)
+    device: 7 (7)
+    time: 2936621045
+    detail: 37
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0x4 effective: 0x14
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 13 (RawKeyPress)
+    device: 3 (7)
+    time:   2936621571
+    detail: 9
+    valuators:
+
+EVENT type 2 (KeyPress)
+    device: 7 (7)
+    time: 2936621571
+    detail: 9
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 14 (RawKeyRelease)
+    device: 3 (7)
+    time:   2936621639
+    detail: 9
+    valuators:
+
+EVENT type 3 (KeyRelease)
+    device: 7 (7)
+    time: 2936621639
+    detail: 9
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 13 (RawKeyPress)
+    device: 3 (7)
+    time:   2936622119
+    detail: 37
+    valuators:
+
+EVENT type 2 (KeyPress)
+    device: 7 (7)
+    time: 2936622119
+    detail: 37
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0 effective: 0x10
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba
+EVENT type 13 (RawKeyPress)
+    device: 3 (7)
+    time:   2936622129
+    detail: 54
+    valuators:
+
+EVENT type 2 (KeyPress)
+    device: 7 (7)
+    time: 2936622129
+    detail: 54
+    flags: 
+    root: 1535.00/419.00
+    event: 1535.00/419.00
+    buttons:
+    modifiers: locked 0x10 latched 0 base 0x4 effective: 0x14
+    group: locked 0 latched 0 base 0 effective: 0
+    valuators:
+    windows: root 0x3f7 event 0x3f7 child 0x8124ba

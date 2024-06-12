@@ -33,6 +33,7 @@ pub struct Overlay {
     parent: Window,
     window: Window,
     render_queue: Vec<Rc<RefCell<dyn Shape<RustConnection>>>>,
+    last_mouse_pos: Coord,
 }
 
 impl Overlay {
@@ -72,6 +73,7 @@ impl Overlay {
             parent,
             window,
             render_queue: Vec::new(),
+            last_mouse_pos: Coord::new(0.0, 0.0),
         })
     }
 
@@ -188,6 +190,11 @@ impl Overlay {
         Ok(self)
     }
 
+    /// Return the last mouse position
+    pub fn mouse_coord(&self) -> Coord {
+        self.last_mouse_pos
+    }
+
     /// Clear the shapes in the overlay
     fn clear_shapes(&mut self) -> &mut Self {
         self.render_queue.clear();
@@ -232,6 +239,9 @@ impl Overlay {
             }
             Event::Redraw => {
                 self.draw()?;
+            }
+            Event::MouseMotion { coord } => {
+                self.last_mouse_pos = coord;
             }
             Event::StopEventLoop => {
                 return Ok(false);

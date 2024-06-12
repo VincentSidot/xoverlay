@@ -2,7 +2,7 @@ use std::{error::Error, fmt::Debug};
 
 use x11rb::{
     connection::Connection,
-    protocol::{xinput::{ButtonPressEvent, RawKeyPressEvent}, xproto::ConfigureNotifyEvent, Event as XEvent},
+    protocol::{xinput::{ButtonPressEvent, RawButtonPressEvent, RawKeyPressEvent}, xproto::ConfigureNotifyEvent, Event as XEvent},
 };
 
 use crate::{key::Key, math::vec::Vec2, shape::coord::Coord, Drawable, Overlay};
@@ -12,6 +12,7 @@ pub enum Button {
     Left,
     Middle,
     Right,
+    Unknown,
 }
 
 #[derive(Debug, PartialEq)]
@@ -60,6 +61,26 @@ impl Event {
 
                 let key = Key::from_xorg_raw(detail as u8);
                 Ok(Self::KeyPress(key))
+            }
+            XEvent::XinputRawButtonPress(RawButtonPressEvent{
+                detail,
+                ..
+            }) => {
+                // Check if parent window is the source of the event
+                if !overlay.has_focus()? {
+                    return Ok(Self::Nothing);
+                }
+
+                let button = match detail {
+                    1 => Button::Left,
+                    2 => Button::Middle,
+                    3 => Button::Right,
+                    _ => Button::Unknown,
+                };
+                Ok(Self::MousePress {
+                    button,
+                    coord: overlay.mouse_coord(),
+                })
             }
             XEvent::ConfigureNotify(ConfigureNotifyEvent {
                 window,
