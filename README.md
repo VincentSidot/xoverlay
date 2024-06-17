@@ -13,40 +13,43 @@
 
 ## Description
 
-XOverlay lib crate, is a simple and easy to use crate for creating linux application
-overlay using X11 and minimal extensions (shape and xinput). The overlay system is 
-designed to be fonctional without window compositor (no need for transparency).
+XOverlay is a simple and easy-to-use crate for creating Linux application overlays using X11 with minimal extensions (shape and xinput). The overlay system is designed to function without a window compositor, eliminating the need for transparency.
 
-This lib is designed to be used for creating overlay for games, video player, etc.
-It allow to create simple shaped window, with a simple event system.
-Current handled events are:
+This library is designed for creating overlays for applications like games and video players.
+It allows to create simple shaped window, with a simple event system.
+
+Currently handled events include:
 - Key press
 - Mouse click
 - Mouse motion
 - Resize
 
-Current version is only compatible with linux, and require X11 server. With the
-following extensions:
-- XShape (for shaped window)
-    - It is the core of the overlay system, allowing to create shaped window (later I will allow to use compositor for transparency).
-- XInput (for mouse and keyboard event)
-    - Later I will make this dependency optional, to allow to use the lib.
+## Prerequisites
 
-The lib is designed to be simple to use, and to be used with the minimum of boilerplate.
+- Linux Only: This library is only compatible with Linux.
+- X11 Server: Requires an X11 server with the following extensions:
+    - XShape: Core of the overlay system for creating shaped windows.
+    - XInput: For mouse and keyboard events. (This dependency may become optional in future versions.)
+
+## Design Philosophy
+
+XOverlay aims to provide a straightforward API that reduces the complexity of creating application overlays on Linux. The library is intended to be easy to use, with minimal setup required.
 
 ## Usage
 
-> Warning: This lib is only compatible with linux, and require X11 server.
+> Warning:
+> - This library is only compatible with Linux and requires an X11 server.
+> - This is still a work in progress, so the API can change.
 
-You can use this lib by adding the following line to your `Cargo.toml` file:
+You can use this library by adding the following line to your `Cargo.toml` file:
 ```toml
 [dependencies]
 xoverlay = { git = "https://github.com/VincentSidot/xoverlay.git", branch = "master"}
 ```
 
-Currently the lib is not published on crates.io, so you need to use the git repository.
+Currently, the library is not published on crates.io, so you need to use the Git repository.
 
-Also this is still a work in progress, so the API can change.
+
 
 ## Example
 
@@ -151,13 +154,13 @@ cargo run --example hello -- $(xwininfo | grep "Window id:" | grep -o "0x[0-9a-f
 
 ### Overlay
 
-The overlay module is the main module of the lib, it is the entry point of the lib.
+The overlay module is the main module of the library, it is the entry point of the library.
 
-There are two way to create an overlay:
+There are two ways to create an overlay:
 - With the `init` method, it will create a new overlay with the given window id, and the given mapping.
 - With the `init_with_name` method, it will create a new overlay with the given window name, and the given mapping.
 
-The overlay is the main struct of the lib, it is used to create the window, and to handle the event loop.
+The overlay is the main struct of the library, it is used to create the window, and to handle the event loop.
 
 The overlay is composed of two windows:
 - The parent window: The window on which the overlay is displayed
@@ -173,7 +176,7 @@ The `event_loop` method is used to handle the event of the overlay window.
 > - The overlay itself
 > - The event
 >
-> After the event loop is finished, the overlay is freed. (In case of crash, the overlay is not freed, I don't know what is implied by this behavior, so I will change it later)
+> After the event loop is finished, the overlay is freed. (Currently not crash safe)
 
 
 ### Event
@@ -222,13 +225,13 @@ The key module is used to handle the key event.
 
 ### Export of x11rb
 
-x11rb crate is re-exported in the lib, to allow to use the x11rb crate directly.
+x11rb crate is re-exported in the library, to allow to use the x11rb crate directly.
 
 x11rb is a low level X11 library, used to interact with the X server.
 
 ## Next steps
 
-Those are the next steps for the lib (the list is not exhaustive and not in order):
+Those are the next steps for the library (the list is not exhaustive and not in order):
 
 - Add X server extension check
 - Update and improve the documentation
@@ -240,7 +243,6 @@ Those are the next steps for the lib (the list is not exhaustive and not in orde
 - Use compositor for transparency
 - Make XInput optional
 - Add more tests (at least add some tests)
-- Update the github repository
 - Create github action for CI (build, test, etc.)
 - Improve the error handling
 

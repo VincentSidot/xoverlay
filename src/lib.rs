@@ -2,30 +2,28 @@
 //! [![Build Status](https://img.shields.io/github/actions/workflow/status/vincentsidot/xoverlay/rust.yml?branch=master&style=for-the-badge)](https://github.com/VincentSidot/xoverlay/actions/workflows/rust.yml)
 //! [![License MIT](https://img.shields.io/badge/License-MIT-red.svg?style=for-the-badge)](https://github.com/VincentSidot/xoverlay/blob/master/LICENSE.md)
 //! 
-//! # XOverlay
+//! # Description
 //! 
+//! XOverlay is a simple and easy-to-use crate for creating Linux application overlays using X11 with minimal extensions (shape and xinput). The overlay system is designed to function without a window compositor, eliminating the need for transparency.
 //! 
-//! XOverlay lib crate, is a simple and easy to use crate for creating linux application
-//! overlay using X11 and minimal extensions (shape and xinput). The overlay system is 
-//! designed to be fonctional without window compositor (no need for transparency).
-//! 
-//! This lib is designed to be used for creating overlay for games, video player, etc.
-//! It allow to create simple shaped window, with a simple event system.
+//! This library is designed for creating overlays for applications like games and video players.
+//! It allows to create simple shaped window, with a simple event system.
 //! Current handled events are:
-//!     - Key press
-//!     - Mouse click
-//!     - Mouse motion
-//!     - Resize
+//! - Key press
+//! - Mouse click
+//! - Mouse motion
+//! - Resize
 //! 
-//! Current version is only compatible with linux, and require X11 server. With the
-//! following extensions:
-//!    - XShape (for shaped window)
-//!         - It is the core of the overlay system, allowing to create shaped window
-//! (later I will allow to use compositor for transparency).
-//!    - XInput (for mouse and keyboard event)
-//!         - Later I will make this dependency optional, to allow to use the lib.
+//! # Prerequisites
 //! 
-//! The lib is designed to be simple to use, and to be used with the minimum of boilerplate.
+//! - Linux Only: This library is only compatible with Linux.
+//! - X11 Server: Requires an X11 server with the following extensions:
+//!     - XShape: Core of the overlay system for creating shaped windows.
+//!     - XInput: For mouse and keyboard events. (This dependency may become optional in future versions.)
+//! 
+//! # Design Philosophy
+//! 
+//! XOverlay aims to provide a straightforward API that reduces the complexity of creating application overlays on Linux. The library is intended to be easy to use, with minimal setup required.
 //! 
 //! # Example
 //! 
@@ -139,7 +137,6 @@
 //! - Use compositor for transparency
 //! - Make XInput optional
 //! - Add more tests (at least add some tests)
-//! - Update the github repository
 //! - Create github action for CI (build, test, etc.)
 //! - Improve the error handling
 
