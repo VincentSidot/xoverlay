@@ -1,3 +1,10 @@
+//! [![GitHub](https://img.shields.io/badge/GitHub-xoverlay-4d76ae?style=for-the-badge)](https://github.com/VincentSidot/xoverlay)
+//! [![Build Status](https://img.shields.io/github/actions/workflow/status/vincentsidot/xoverlay/rust.yml?branch=master&style=for-the-badge)](https://github.com/VincentSidot/xoverlay/actions/workflows/rust.yml)
+//! [![License MIT](https://img.shields.io/badge/License-MIT-red.svg?style=for-the-badge)](https://github.com/VincentSidot/xoverlay/blob/master/LICENSE.md)
+//! 
+//! # XOverlay
+//! 
+//! 
 //! XOverlay lib crate, is a simple and easy to use crate for creating linux application
 //! overlay using X11 and minimal extensions (shape and xinput). The overlay system is 
 //! designed to be fonctional without window compositor (no need for transparency).
