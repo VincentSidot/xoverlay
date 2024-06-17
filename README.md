@@ -35,7 +35,9 @@ cargo build
 You can run the example by using the following command:
 
 ```sh
-cargo run --example hello
+cargo run --example hello <window_id>
+cargo run --example hello -- $(xwininfo | grep "Window id:" | grep -o "0x[0-9a-f]*") # Just click on the wanted window
+cargo run --example find <window_name>
 ```
 
 ## Built With
