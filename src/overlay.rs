@@ -18,14 +18,10 @@ use crate::{
         pixmap::Pixmap,
         window::{Mapping, Window},
         Drawable,
-    },
-    event::Event,
-    math::vec::Vec2,
-    shape::{
+    }, event::Event, math::vec::Vec2, shape::{
         coord::{Anchor, Coord, Size},
         Rectangle, Shape,
-    },
-    Color,
+    }, utils, Color
 };
 
 pub struct Overlay {
@@ -76,6 +72,39 @@ impl Overlay {
             last_mouse_pos: Coord::new(0.0, 0.0),
         })
     }
+
+    pub fn init_with_name(
+        parent: &String,
+        mapping: &Mapping,
+        host: Option<&str>,
+    ) -> Result<Self, Box<dyn Error>> {
+        let (conn, screen_num) = x11rb::connect(host)?;
+
+        // Fetch the root window
+        let root = (&conn).setup().roots[screen_num].root;
+
+        // Get the parent id
+        let id = if let Some(id) = utils::get_best_match(&conn, root, parent)? {
+            id
+        } else {
+            return Err("No window found".into());
+        };
+
+        // Create a new window
+        let parent = Window::from(&conn, id, root)?;
+        let window = Window::new(&conn, &parent, mapping)?;
+
+        // Create the overlay
+        Ok(Self {
+            conn,
+            parent,
+            window,
+            render_queue: Vec::new(),
+            last_mouse_pos: Coord::new(0.0, 0.0),
+        })
+
+    }
+
 
     pub fn add_shape(&mut self, shape: Rc<RefCell<dyn Shape<RustConnection>>>) -> &mut Self {
         self.render_queue.push(shape);
