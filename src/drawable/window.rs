@@ -252,7 +252,6 @@ impl Window {
         for device in devices.devices {
             match device {
                 device if device.device_use == DeviceUse::IS_X_KEYBOARD => {
-                    println!("Device {} is a keyboard", device.device_id);
                     conn.xinput_xi_select_events(
                         root,
                         &[XIEventMask {
@@ -263,7 +262,6 @@ impl Window {
                     .check()?;
                 }
                 device if device.device_use == DeviceUse::IS_X_POINTER => {
-                    println!("Device {} is a pointer", device.device_id);
                     conn.xinput_xi_select_events(
                         id,
                         &[XIEventMask {

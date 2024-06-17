@@ -57,7 +57,7 @@ impl Overlay {
         let (conn, screen_num) = x11rb::connect(host)?;
 
         // Fetch the root window
-        let root = (&conn).setup().roots[screen_num].root;
+        let root = conn.setup().roots[screen_num].root;
 
         // Create a new window
         let parent = Window::from(&conn, parent, root)?;
@@ -81,7 +81,7 @@ impl Overlay {
         let (conn, screen_num) = x11rb::connect(host)?;
 
         // Fetch the root window
-        let root = (&conn).setup().roots[screen_num].root;
+        let root = conn.setup().roots[screen_num].root;
 
         // Get the parent id
         let id = if let Some(id) = utils::get_best_match(&conn, root, parent)? {
@@ -297,7 +297,7 @@ impl Overlay {
         // Main event loop
         while is_running {
             // Poll the event
-            let event = Event::wait(&self)?;
+            let event = Event::wait(self)?;
             is_running = self.handle_event(event, &mut callback)?;
         }
         Ok(())

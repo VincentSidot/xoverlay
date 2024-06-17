@@ -8,7 +8,9 @@ use xoverlay::{
 
 use std::{env, error::Error};
 
+
 fn main() -> Result<(), Box<dyn Error>> {
+    // Fetch window from argument
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 2 {
@@ -38,21 +40,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Create rectangles
     let rec = Rectangle::fill(
-        Anchor::Center,
-        Coord::new(0.5, 0.5),
-        Size::new(0.1, 0.1),
+        Anchor::default(),
+        Coord::new(0.5, 0.7),
+        Size::new(0.5, 1.0),
         color_tab[current_color],
     )?;
-
-    // let to_draw : Vec<&dyn Shape<RustConnection>> = vec![
-    //     &rec,
-    //     // Rectangle::fill(
-    //     //     Anchor::NorthEast,
-    //     //     Coord::new(1.0, 0.0),
-    //     //     Size::new(0.2, 1.0),
-    //     //     Color::RED,
-    //     // )?,
-    // ];
 
     // Add the rectangles to the overlay
     overlay.add_shape(rec.clone()).event_loop(|_, event| {
