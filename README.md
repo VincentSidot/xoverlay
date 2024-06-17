@@ -1,4 +1,11 @@
 # XOverlay
+[![Build Status][build-img]][build-img]
+[![Documentation][doc-img]][doc-url]
+
+[build-img]: https://img.shields.io/github/actions/workflow/status/vincentsidot/xoverlay/rust.yml?branch=master&style=for-the-badge
+[build-url]: https://github.com/VincentSidot/xoverlay/actions/workflows/rust.yml
+[doc-img]: https://img.shields.io/badge/docs.rs-xoverlay-4d76ae?style=for-the-badge
+[doc-url]: https://vincentsidot.github.io/xoverlay/
 
 XOverlay is a Rust project.
 
