@@ -149,6 +149,83 @@ cargo run --example hello -- $(xwininfo | grep "Window id:" | grep -o "0x[0-9a-f
 
 ## Library modules description
 
+### Overlay
+
+The overlay module is the main module of the lib, it is the entry point of the lib.
+
+There are two way to create an overlay:
+- With the `init` method, it will create a new overlay with the given window id, and the given mapping.
+- With the `init_with_name` method, it will create a new overlay with the given window name, and the given mapping.
+
+The overlay is the main struct of the lib, it is used to create the window, and to handle the event loop.
+
+The overlay is composed of two windows:
+- The parent window: The window on which the overlay is displayed
+- The overlay window: The window that is displayed on top of the parent window
+
+Shapes are added to the overlay window, with the `add_shape` method. (`add_shapes` method is also available to add multiple shapes at once)
+
+Shapes can be drawn manually with the `draw` method, or automatically with the `event_loop` method.
+
+The `event_loop` method is used to handle the event of the overlay window.
+
+> Note: The `event_loop` method take a closure that take two arguments:
+> - The overlay itself
+> - The event
+>
+> After the event loop is finished, the overlay is freed. (In case of crash, the overlay is not freed, I don't know what is implied by this behavior, so I will change it later)
+
+
+### Event
+
+The event module is used to handle the event of the overlay.
+
+The following events are handled:
+- ***ParentResize***: Triggered when the parent window is resized
+- ***MousePress***: Triggered when a mouse button is pressed (inside the parent window)
+- ***MouseMotion***: Triggered when the mouse is moved (inside the parent window)
+- ***KeyPress***: Triggered when a key is pressed (while the overlay window is focused)
+- ***KeyRelease***: Triggered when a key is released (while the overlay window is focused)
+- ***Redraw***: Triggered when the overlay need to be redrawn
+- ***StopEventLoop***: Triggered when the event loop need to be stopped
+- ***Nothing***: Triggered a previous event is partially handled (ex: MousePress outside the overlay window)
+- ***Unknown***: Triggered when a not handled event is received
+
+### Shape
+
+The shape module is used to create the shape of the overlay window.
+
+The following shapes are handled:
+- ***Rectangle***: A rectangle shape
+- ***Arc***: An arc shape (partial circle)
+    - ***Circle***: A circle shape (special case of arc)
+
+### Coord
+
+The coord module is used to handle the coordinate of the shape.
+
+The following structures are implemented:
+- ***Pos***: Represent a position in the window (position are f32 between 0.0 and 1.0)
+- ***Size***: Represent a size in the window (size are f32 between 0.0 and 1.0)
+- ***Anchor***: Represent an anchor point in the window
+    - NorthWest (default anchor), North, NorthEast, West, Center, East, SouthWest, South, SouthEast, Custom(x, y)
+
+### Color
+
+The color module is used to handle the color of the shape.
+
+### Key
+
+The key module is used to handle the key event.
+
+> Note: Currently only the arrow keys are handled. (Later I will add more keys)
+
+### Export of x11rb
+
+x11rb crate is re-exported in the lib, to allow to use the x11rb crate directly.
+
+x11rb is a low level X11 library, used to interact with the X server.
+
 ## Next steps
 
 Those are the next steps for the lib (the list is not exhaustive and not in order):
