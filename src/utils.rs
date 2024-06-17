@@ -1,3 +1,18 @@
+//! Utility functions for the overlay library
+//! 
+//! This module contains utility functions used by the overlay library
+//! 
+//! # Further optimizations
+//! 
+//! The current implementation of the levenshtein distance algorithm is not optimized.
+//!     - The space complexity is len(a) * len(b)
+//!     - The algorithm is working with multi-byte characters
+//! 
+//! The current window search algorithm is not optimized.
+//!     - The algorithm is recursive
+//!     - It may be parallelized to speed up the search
+//!     - I could also define a minimum distance to stop the search (currently only exact match will stop the search)
+
 use std::error::Error;
 
 use x11rb::{
@@ -8,18 +23,35 @@ use x11rb::{
 };
 
 x11rb::atom_manager! {
+    /// Atoms used to fetch the window name
+    /// 
+    /// The atoms are used to fetch the window name.
+    /// * _NET_WM_NAME: The window name
+    /// * UTF8_STRING: The string encoding
     pub Atoms: AtomsCookie {
         _NET_WM_NAME,
         UTF8_STRING,
     }
 }
 
-/// Compute the [levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) between two strings a and b   
+/// Compute the [levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) between two strings a and b
+/// The algorithm may be optimized (space complexity is len(a) * len(b)).
+/// The algorithm is working with multi-byte characters.
+/// 
+/// # Arguments
+/// 
+/// * `a` - The first string
+/// * `b` - The second string
+/// 
+/// # Returns
+/// 
+/// The function returns the levenshtein distance between the two strings.
+/// 
 fn compute_levensthein_distance_case_insensitive(a: &str, b: &str) -> usize {
-    let a = a.to_ascii_lowercase();
-    let b = b.to_ascii_lowercase();
-    let a_len = a.chars().count();
-    let b_len = b.chars().count();
+    let a = a.to_lowercase();
+    let b = b.to_lowercase();
+    let a_len = a.chars().count(); // Number of characters in a string (multi-byte characters are counted as one character)
+    let b_len = b.chars().count(); // Number of characters in a string (multi-byte characters are counted as one character)
     let mut dp = vec![vec![0; b_len + 1]; a_len + 1];
     // Intialize the first row and the first column
     for i in 0..=a_len {
@@ -41,7 +73,28 @@ fn compute_levensthein_distance_case_insensitive(a: &str, b: &str) -> usize {
     dp[a_len][b_len]
 }
 
-pub fn get_best_match<C>(conn: &C, root: u32, reference: &String) -> Result<Option<XWindow>, Box<dyn Error>>
+/// Get the best match for a window name
+/// 
+/// This function will search for the best match for a window name in the window tree.
+/// It is a recursive function that will search for the best match in the children of the root window.
+/// 
+/// # Arguments
+/// 
+/// * `conn` - The X11 connection
+/// * `root` - The root window
+/// * `reference` - The reference string to match
+/// 
+/// # Returns
+/// 
+/// The function returns the best match for the reference string in the window tree.
+/// If no match is found, the function will return None.
+/// 
+/// # Errors
+/// 
+/// The function may return an error if the X11 connection is not valid.
+/// Or if the window tree cannot be fetched.
+/// 
+pub fn get_best_match<C>(conn: &C, root: u32, reference: &str) -> Result<Option<XWindow>, Box<dyn Error>>
 where
     C: Connection,
 {
@@ -59,7 +112,34 @@ where
     }
 }
 
-fn match_for_childs<C>(conn: &C, root: u32, best_match: &mut Option<(u32, String, usize, bool)>, reference: &String, atoms: &Atoms) -> Result<(), Box<dyn Error>>
+/// Match for childs
+/// 
+/// This function will search for the best match in the children of a window.
+/// This is the inner recursive function used by get_best_match.
+/// 
+/// # Arguments
+/// 
+/// * `conn` - The X11 connection
+/// * `root` - The root window
+/// * `best_match` - The best match found so far. The tuple contains:
+///     - The window id
+///     - The window name
+///     - The distance between the window name and the reference string
+///     - A boolean indicating if the match is perfect (use for early return) 
+/// * `reference` - The reference string to match
+/// * `atoms` - The atoms used to fetch the window name
+/// 
+/// # Returns
+/// 
+/// The function does not return anything.
+/// It will update the best_match tuple with the best match found in the children of the root window.
+/// 
+/// # Errors
+/// 
+/// The function may return an error if the X11 connection is not valid.
+/// Or if the window tree cannot be fetched.
+/// 
+fn match_for_childs<C>(conn: &C, root: u32, best_match: &mut Option<(u32, String, usize, bool)>, reference: &str, atoms: &Atoms) -> Result<(), Box<dyn Error>>
 where
     C: Connection,
 {
@@ -108,4 +188,20 @@ where
 
     Ok(())
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compute_levensthein_distance_case_insensitive() {
+        assert_eq!(compute_levensthein_distance_case_insensitive("hello", "hello"), 0);
+        assert_eq!(compute_levensthein_distance_case_insensitive("HeLLo", "hello"), 0);
+        assert_eq!(compute_levensthein_distance_case_insensitive("hello", "world"), 4);
+        assert_eq!(compute_levensthein_distance_case_insensitive("hello", "hella"), 1);
+        assert_eq!(compute_levensthein_distance_case_insensitive("hello", "hallo"), 1);
+        assert_eq!(compute_levensthein_distance_case_insensitive("hello", "holle"), 2);
+        assert_eq!(compute_levensthein_distance_case_insensitive("hello", "h"), 4);
+    }
 }

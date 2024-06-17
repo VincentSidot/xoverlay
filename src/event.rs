@@ -1,3 +1,12 @@
+//! # Event handling module
+//! 
+//! This module is used to define the event handling system for the overlay library
+//! 
+//! # Next steps
+//!
+//! - Add more events
+//! - Add tests (Currently no idea how to test this module)
+
 use std::{error::Error, fmt::Debug};
 
 use x11rb::{
@@ -7,6 +16,7 @@ use x11rb::{
 
 use crate::{key::Key, math::vec::Vec2, shape::coord::Coord, Drawable, Overlay};
 
+/// Represents the different mouse buttons.
 #[derive(Debug, PartialEq)]
 pub enum Button {
     Left,
@@ -15,20 +25,40 @@ pub enum Button {
     Unknown,
 }
 
+/// Represents the different types of events that can occur.
 #[derive(Debug, PartialEq)]
 pub enum Event {
+    /// Event indicating that the parent window has been resized.
     ParentResize(Vec2<u16>),
+    /// Event indicating that a mouse button has been pressed.
+    /// 
+    /// This trigger only when the parent window is the source of the event
     MousePress { button: Button, coord: Coord },
+    /// Event indicating that the mouse has moved.
+    /// 
+    /// This trigger only when the parent window is the source of the event
     MouseMotion { coord: Coord },
+    /// Event indicating that a key has been pressed.
+    /// 
+    /// This trigger only when the parent window is the source of the event
     KeyPress(Key),
+    /// Event indicating that a key has been released.
+    /// 
+    /// This trigger only when the parent window is the source of the event
     KeyRelease(Key),
+    /// Event indicating that a redraw is needed.
     Redraw,
+    /// Event indicating that the event loop should stop.
     StopEventLoop,
+    /// Event indicating that nothing has happened.
     Nothing,
+    /// Event indicating an unknown event.
     Unkown,
 }
 
+/// Implement the event handling system for the overlay.
 impl Event {
+    /// Waits for an event to occur and returns the corresponding `Event` value.
     pub fn wait(overlay: &Overlay) -> Result<Self, Box<dyn Error>> {
         let xevent = overlay.conn.wait_for_event()?;
 

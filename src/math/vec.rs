@@ -1,13 +1,27 @@
+//! Contains the Vec2 struct and its implementations
+//! 
+//! This module contains the Vec2 struct and its implementations.
+//! 
+//! Vec2 is a generic 2D vector struct that can be used to represent points or directions in a 2D space.
+//! 
+//! It can be used with any type that implements the basic arithmetic operations (Add, Sub, Mul, Div, Neg).
+
 #![allow(dead_code)]
 use std::ops;
 
 /// Represents a 2D vector
+/// 
+/// Vec2 is a generic 2D vector struct that can be used to represent points or directions in a 2D space.
+/// 
+/// The struct is generic over the type of the components (x and y).
+/// 
 #[derive(Debug, Clone, Copy)]
 pub struct Vec2<T> {
     pub x: T,
     pub y: T,
 }
 
+/// Type aliases for Vec2
 pub type Vec2f = Vec2<f32>;
 pub type Vec2i = Vec2<i32>;
 pub type Vec2u = Vec2<u32>;
@@ -216,5 +230,123 @@ where
             x: self.x.into() / length,
             y: self.y.into() / length,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_addition() {
+        let vec1 = Vec2::new(1, 2);
+        let vec2 = Vec2::new(3, 4);
+        let vec3 = Vec2::new(0, 0);
+        let result = vec1 + vec2 + vec3;
+        assert_eq!(result.x(), 4);
+        assert_eq!(result.y(), 6);
+    }
+
+    #[test]
+    fn test_subtraction() {
+        let vec1 = Vec2::new(5, 6);
+        let vec2 = Vec2::new(2, 3);
+        let result = vec1 - vec2;
+        assert_eq!(result.x(), 3);
+        assert_eq!(result.y(), 3);
+    }
+
+    #[test]
+    fn test_scalar_multiplication() {
+        let vec = Vec2::new(2, 3);
+        let scalar = 2;
+        let result = vec * scalar;
+        assert_eq!(result.x(), 4);
+        assert_eq!(result.y(), 6);
+    }
+
+    #[test]
+    fn test_dot_product() {
+        let vec1 = Vec2::new(1, 2);
+        let vec2 = Vec2::new(3, 4);
+        let result = vec1 * vec2;
+        
+        assert_eq!(result, 11);
+    }
+
+    #[test]
+    fn test_scalar_division() {
+        let vec = Vec2::new(4, 6);
+        let scalar = 2;
+        let result = vec / scalar;
+        assert_eq!(result.x(), 2);
+        assert_eq!(result.y(), 3);
+    }
+
+    #[test]
+    fn test_negation() {
+        let vec = Vec2::new(2, 3);
+        let result = -vec;
+        assert_eq!(result.x(), -2);
+        assert_eq!(result.y(), -3);
+    }
+
+    #[test]
+    fn test_equality() {
+        let vec1 = Vec2::new(1, 2);
+        let vec2 = Vec2::new(1, 2);
+        assert_eq!(vec1, vec2);
+    }
+
+    #[test]
+    fn test_from_tuple() {
+        let tuple = (3, 4);
+        let vec: Vec2<i32> = tuple.into();
+        assert_eq!(vec.x(), 3);
+        assert_eq!(vec.y(), 4);
+    }
+
+    #[test]
+    fn test_from_array() {
+        let array = [5, 6];
+        let vec: Vec2<i32> = array.into();
+        assert_eq!(vec.x(), 5);
+        assert_eq!(vec.y(), 6);
+    }
+
+    #[test]
+    fn test_to_tuple() {
+        let vec = Vec2::new(3, 4);
+        let tuple: (i32, i32) = vec.into();
+        assert_eq!(tuple, (3, 4));
+    }
+
+    #[test]
+    fn test_to_array() {
+        let vec = Vec2::new(5, 6);
+        let array: [i32; 2] = vec.into();
+        assert_eq!(array, [5, 6]);
+    }
+
+    #[test]
+    fn test_length() {
+        let vec = Vec2f::new(3.0, 4.0);
+        let length = vec.length();
+        assert_eq!(length, 5.0);
+    }
+
+    #[test]
+    fn test_fast_length() {
+        let vec = Vec2f::new(3.0, 4.0);
+        let length = vec.fast_length();
+        assert_eq!(length, 25.0);
+    }
+
+    #[test]
+    fn test_normalize() {
+        let vec = Vec2f::new(3.0, 4.0);
+        let normalized = vec.normalize();
+        assert_eq!(normalized.x(), 0.6);
+        assert_eq!(normalized.y(), 0.8);
     }
 }

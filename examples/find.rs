@@ -47,16 +47,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
 
     // Add the rectangles to the overlay
-    overlay.add_shape(rec.clone()).event_loop(|_, event| {
+    overlay.add_shape(rec.clone());
+    overlay.event_loop(|_, event| {
         match event {
             Event::MouseMotion { coord } => {
                 let mut rec = rec.borrow_mut();
                 rec.set_position(coord);
                 Some(Event::Redraw)
             }
-            Event::KeyPress(Key{
-                key: KeyRef::ArrowUp
-            }) => {
+            Event::KeyPress(Key(KeyRef::ArrowUp)) => {
                 println!("ArrowUp pressed");
                 Some(Event::StopEventLoop)
             }

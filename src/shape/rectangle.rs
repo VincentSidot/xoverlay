@@ -1,3 +1,7 @@
+//! Rectangle shape module
+//! 
+//! This module is used to define the rectangle shape object used by the overlay library
+
 use std::{cell::RefCell, error::Error, rc::Rc};
 
 use x11rb::{
@@ -12,6 +16,7 @@ use super::{
     Shape,
 };
 
+/// Represents a rectangle shape object used by the overlay library.
 pub struct Rectangle {
     anchor: Anchor, // Describes where the coordinate is relative to the shape
     position: Coord,
@@ -21,6 +26,18 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
+    /// Creates a new filled rectangle shape object.
+    ///
+    /// # Arguments
+    ///
+    /// * `anchor` - The anchor point of the rectangle.
+    /// * `position` - The position of the rectangle.
+    /// * `size` - The size of the rectangle.
+    /// * `color` - The color of the rectangle.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a reference-counted `RefCell` of the created `Rectangle` object, or a `Box` containing an error if the creation fails.
     pub fn fill(
         anchor: Anchor,
         position: Coord,
@@ -36,6 +53,18 @@ impl Rectangle {
         })))
     }
 
+    /// Creates a new unfilled rectangle shape object.
+    ///
+    /// # Arguments
+    ///
+    /// * `anchor` - The anchor point of the rectangle.
+    /// * `position` - The position of the rectangle.
+    /// * `size` - The size of the rectangle.
+    /// * `color` - The color of the rectangle.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a reference-counted `RefCell` of the created `Rectangle` object, or a `Box` containing an error if the creation fails.
     pub fn new(
         anchor: Anchor,
         position: Coord,
@@ -51,40 +80,59 @@ impl Rectangle {
         })))
     }
 
+    /// Returns the anchor point of the rectangle.
     pub fn anchor(&self) -> &Anchor {
         &self.anchor
     }
 
+    /// Sets the anchor point of the rectangle.
     pub fn set_anchor(&mut self, anchor: Anchor) {
         self.anchor = anchor;
     }
 
+    /// Returns the position of the rectangle.
     pub fn position(&self) -> &Coord {
         &self.position
     }
 
+    /// Sets the position of the rectangle.
     pub fn set_position(&mut self, position: Coord) {
         self.position = position;
     }
 
+    /// Returns the size of the rectangle.
     pub fn size(&self) -> &Size {
         &self.size
     }
 
+    /// Sets the size of the rectangle.
     pub fn set_size(&mut self, size: Size) {
         self.size = size;
     }
 
+    /// Returns the color of the rectangle.
     pub fn color(&self) -> &Color {
         &self.color
     }
 
+    /// Sets the color of the rectangle.
     pub fn set_color(&mut self, color: Color) {
         self.color = color;
     }
 }
 
 impl<C: Connection> Shape<C> for Rectangle {
+    /// Draws the rectangle on the specified drawable using the given graphics context.
+    ///
+    /// # Arguments
+    ///
+    /// * `conn` - The X11 connection.
+    /// * `gc` - The graphics context.
+    /// * `drawable` - The drawable to draw on.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing `()` if the drawing is successful, or a `Box` containing an error if the drawing fails.
     fn draw(&self, conn: &C, gc: &Gcontext, drawable: &dyn Drawable) -> Result<(), Box<dyn Error>> {
         // Calculate the position of the rectangle
         let coord = self
@@ -122,6 +170,7 @@ impl<C: Connection> Shape<C> for Rectangle {
         Ok(())
     }
 
+    /// Returns the color of the rectangle.
     fn color(&self) -> &Color {
         &self.color
     }
