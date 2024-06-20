@@ -122,7 +122,7 @@ impl Overlay<RustConnection> {
             Parent::Id(id) => id as XWindow,
             Parent::Name(name) => {
                 // Get the parent id
-                if let Some(id) = utils::get_best_match(&conn, root, &name)? {
+                if let Some(id) = utils::find_window_by_name(&conn, root, &name)? {
                     id as XWindow
                 } else {
                     return Err("No window found".into());

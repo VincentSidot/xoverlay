@@ -94,7 +94,7 @@ fn compute_levensthein_distance_case_insensitive(a: &str, b: &str) -> usize {
 /// The function may return an error if the X11 connection is not valid.
 /// Or if the window tree cannot be fetched.
 /// 
-pub fn get_best_match<C>(conn: &C, root: u32, reference: &str) -> Result<Option<XWindow>, Box<dyn Error>>
+pub fn find_window_by_name<C>(conn: &C, root: u32, reference: &str) -> Result<Option<XWindow>, Box<dyn Error>>
 where
     C: Connection,
 {
