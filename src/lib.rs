@@ -180,6 +180,9 @@ pub mod shape;
 /// Export Color enum from color module
 pub use color::Color;
 
+/// Export Window Find functions from utils module
+pub use utils::get_best_match as find_window_by_name;
+
 /// Export drawable object from drawable module
 pub use drawable::{
     window::{Mapping, Window},
