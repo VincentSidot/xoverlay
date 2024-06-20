@@ -3,7 +3,7 @@ use xoverlay::{
     event::Event, key::{Key, KeyRef}, shape::{
         coord::{Anchor, Coord, Size},
         Rectangle,
-    }, Color, Drawable, Mapping, Overlay
+    }, Color, Drawable, Mapping, Overlay, Parent,
 };
 
 use std::{env, error::Error};
@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // println!("Window: {:#x}", window);
 
     // Initialize the overlay
-    let mut overlay = Overlay::init(window, &Mapping::FullScreen, None)?;
+    let mut overlay = Overlay::init(Parent::Id(window), &Mapping::FullScreen, None)?;
 
     // Display parent and overlay window ids
     println!("Parent window: {:#x}", overlay.parent().id());

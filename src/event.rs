@@ -59,7 +59,7 @@ pub enum Event {
 /// Implement the event handling system for the overlay.
 impl Event {
     /// Waits for an event to occur and returns the corresponding `Event` value.
-    pub fn wait(overlay: &Overlay) -> Result<Self, Box<dyn Error>> {
+    pub fn wait<C: Connection>(overlay: &Overlay<C>) -> Result<Self, Box<dyn Error>> {
         let xevent = overlay.conn.wait_for_event()?;
 
         match xevent {

@@ -5,7 +5,7 @@
 //! # Example
 //! 
 //! ```no_run
-//! use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay};
+//! use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay, Parent};
 //! 
 //! use std::error::Error;
 //! 
@@ -18,7 +18,7 @@
 //! const HOST: Option<&str> = None;                    // The host to connect to
 //! 
 //! fn main() -> Result<(), Box<dyn Error>> {
-//!     let mut overlay = Overlay::init_with_name(PARENT_WINDOW, &MAPPING, HOST)?;
+//!     let mut overlay = Overlay::init(Parent::Name(PARENT_WINDOW), &MAPPING, HOST)?;
 //! 
 //!     // Create a new rectangle
 //!     let rec = Rectangle::fill(ANCHOR, COORD, SIZE, COLOR)?;
@@ -60,20 +60,29 @@ use crate::{
 /// The overlay struct
 /// 
 /// The overlay is the main object of the library, it is used to create the overlay
-pub struct Overlay {
+pub struct Overlay<C>
+where
+    C: Connection,
+{
     /// The connection to the X server
-    pub conn: RustConnection,
+    pub conn: C,
     /// The parent window
     parent: Window,
     /// The overlay window
     window: Window,
     /// The render queue (shapes to draw)
-    render_queue: Vec<Rc<RefCell<dyn Shape<RustConnection>>>>,
+    render_queue: Vec<Rc<RefCell<dyn Shape<C>>>>,
     /// The last mouse position
     last_mouse_pos: Coord,
 }
 
-impl Overlay {
+pub enum Parent<'a> {
+    Id(XWindow),
+    Name(&'a str),
+}
+
+impl Overlay<RustConnection> {
+
     /// Initialize a new overlay, binding it to the parent window
     ///
     /// # Arguments
@@ -92,19 +101,45 @@ impl Overlay {
     /// # Example
     /// 
     /// ```no_run
-    /// use xoverlay::{Mapping, Overlay};
+    /// use xoverlay::{Mapping, Overlay, Parent};
     /// let parent = 0x12345678; // The parent window id
-    /// let overlay = Overlay::init(parent, &Mapping::FullScreen, None);
+    /// let overlay = Overlay::init(Parent::Id(parent), &Mapping::FullScreen, None);
     /// ```
     /// 
     pub fn init(
-        parent: XWindow,
+        parent: Parent,
         mapping: &Mapping,
         host: Option<&str>,
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> Result<Overlay<RustConnection>, Box<dyn Error>> {
         // Create a new connection
         let (conn, screen_num) = x11rb::connect(host)?;
 
+        // Fetch the root window
+        let root = conn.setup().roots[screen_num].root;
+
+        // Compute parent id
+        let parent_id = match parent {
+            Parent::Id(id) => id as XWindow,
+            Parent::Name(name) => {
+                // Get the parent id
+                if let Some(id) = utils::get_best_match(&conn, root, &name)? {
+                    id as XWindow
+                } else {
+                    return Err("No window found".into());
+                }
+            }
+        };
+
+        Overlay::init_with_conn(parent_id, mapping, conn, screen_num)
+    }
+}
+
+impl<C> Overlay<C>
+where
+    C: Connection,
+{
+    pub fn init_with_conn(parent: XWindow, mapping: &Mapping, conn: C, screen_num: usize) -> Result<Self, Box<dyn Error>>
+    {
         // Fetch the root window
         let root = conn.setup().roots[screen_num].root;
 
@@ -122,62 +157,6 @@ impl Overlay {
         })
     }
 
-    /// Initialize a new overlay, binding it to the parent window
-    ///
-    /// # Arguments
-    ///
-    /// * `parent` - The parent window name
-    /// * `host` - The host to connect to (if None, connect to $DISPLAY)
-    ///
-    /// # Returns
-    ///
-    /// A new overlay struct
-    ///
-    /// # Errors
-    ///
-    /// If the overlay could not be created
-    ///
-    /// # Example
-    /// 
-    /// ```no_run
-    /// use xoverlay::{Mapping, Overlay};
-    /// let parent = "My Beautiful Window"; // The parent window name
-    /// let overlay = Overlay::init_with_name(parent, &Mapping::FullScreen, None);
-    /// ```
-    /// 
-    pub fn init_with_name(
-        parent: &str,
-        mapping: &Mapping,
-        host: Option<&str>,
-    ) -> Result<Self, Box<dyn Error>> {
-        let (conn, screen_num) = x11rb::connect(host)?;
-
-        // Fetch the root window
-        let root = conn.setup().roots[screen_num].root;
-
-        // Get the parent id
-        let id = if let Some(id) = utils::get_best_match(&conn, root, parent)? {
-            id
-        } else {
-            return Err("No window found".into());
-        };
-
-        // Create a new window
-        let parent = Window::from(&conn, id, root)?;
-        let window = Window::new(&conn, &parent, mapping)?;
-
-        // Create the overlay
-        Ok(Self {
-            conn,
-            parent,
-            window,
-            render_queue: Vec::new(),
-            last_mouse_pos: Coord::new(0.0, 0.0),
-        })
-
-    }
-
-
     /// Add a shape to the overlay
     /// 
     /// # Arguments
@@ -191,7 +170,7 @@ impl Overlay {
     /// # Example
     /// 
     /// ```no_run
-    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay};
+    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay, Parent};
     /// 
     /// use std::error::Error;
     /// 
@@ -204,7 +183,7 @@ impl Overlay {
     /// const COORD: Coord = Coord {x: 0.5, y: 0.5};          // The position of the rectangle
     /// const COLOR: Color = Color::RED;                    // The color of the rectangle
     /// 
-    /// let mut overlay = Overlay::init_with_name(PARENT_WINDOW, &MAPPING, HOST).unwrap();
+    /// let mut overlay = Overlay::init(Parent::Name(PARENT_WINDOW), &MAPPING, HOST).unwrap();
     /// 
     /// // Create a new rectangle
     /// let rec = Rectangle::fill(ANCHOR, COORD, SIZE, COLOR).unwrap();
@@ -212,7 +191,7 @@ impl Overlay {
     /// // Add the rectangle to the overlay
     /// overlay.add_shape(rec);
     /// ```
-    pub fn add_shape(&mut self, shape: Rc<RefCell<dyn Shape<RustConnection>>>) -> &mut Self {
+    pub fn add_shape(&mut self, shape: Rc<RefCell<dyn Shape<C>>>) -> &mut Self {
         self.render_queue.push(shape);
         self
     }
@@ -230,7 +209,7 @@ impl Overlay {
     /// # Example
     ///
     /// ```no_run
-    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle, Arc, Shape}, Color, Mapping, Overlay};
+    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle, Arc, Shape}, Color, Mapping, Overlay, Parent};
     /// use xoverlay::x11rb::rust_connection::RustConnection;
     /// use std::{cell::RefCell, rc::Rc};
     /// 
@@ -240,7 +219,7 @@ impl Overlay {
     /// const MAPPING: Mapping = Mapping::FullScreen;       // The mapping of the overlay
     /// const HOST: Option<&str> = None;                    // The host to connect to
     /// 
-    /// let mut overlay = Overlay::init_with_name(PARENT_WINDOW, &MAPPING, HOST).unwrap();
+    /// let mut overlay = Overlay::init(Parent::Name(PARENT_WINDOW), &MAPPING, HOST).unwrap();
     /// 
     /// // Create a new rectangle
     /// let to_draw: Vec<Rc<RefCell<dyn Shape<RustConnection>>>> = vec![
@@ -254,7 +233,7 @@ impl Overlay {
     /// 
     pub fn add_shapes<I>(&mut self, shapes: I) -> &mut Self
     where
-        I: IntoIterator<Item = Rc<RefCell<dyn Shape<RustConnection>>>>,
+        I: IntoIterator<Item = Rc<RefCell<dyn Shape<C>>>>,
     {
         self.render_queue.extend(shapes);
         self
@@ -283,7 +262,7 @@ impl Overlay {
     /// # Example
     /// 
     /// ```no_run
-    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay};
+    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay, Parent};
     /// 
     /// use std::error::Error;
     /// 
@@ -296,7 +275,7 @@ impl Overlay {
     /// const COORD: Coord = Coord {x: 0.5, y: 0.5};          // The position of the rectangle
     /// const COLOR: Color = Color::RED;                    // The color of the rectangle
     /// 
-    /// let mut overlay = Overlay::init_with_name(PARENT_WINDOW, &MAPPING, HOST).unwrap();
+    /// let mut overlay = Overlay::init(Parent::Name(PARENT_WINDOW), &MAPPING, HOST).unwrap();
     /// 
     /// // Create a new rectangle
     /// let rec = Rectangle::fill(ANCHOR, COORD, SIZE, COLOR).unwrap();
@@ -430,7 +409,7 @@ impl Overlay {
     /// 
     /// # Example
     /// ```no_run
-    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay};
+    /// use xoverlay::{shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay, Parent};
     /// 
     /// use std::error::Error;
     /// 
@@ -443,7 +422,7 @@ impl Overlay {
     /// const COORD: Coord = Coord {x: 0.5, y: 0.5};          // The position of the rectangle
     /// const COLOR: Color = Color::RED;                    // The color of the rectangle
     /// 
-    /// let mut overlay = Overlay::init_with_name(PARENT_WINDOW, &MAPPING, HOST).unwrap();
+    /// let mut overlay = Overlay::init(Parent::Name(PARENT_WINDOW), &MAPPING, HOST).unwrap();
     /// 
     /// // Create a new rectangle
     /// let rec = Rectangle::fill(ANCHOR, COORD, SIZE, COLOR).unwrap();
@@ -563,7 +542,7 @@ impl Overlay {
     /// # Example
     /// 
     /// ```no_run
-    /// use xoverlay::{event::Event, key::{Key, KeyRef}, shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay};
+    /// use xoverlay::{event::Event, key::{Key, KeyRef}, shape::{coord::{Anchor, Coord, Size}, Rectangle}, Color, Mapping, Overlay, Parent};
     /// 
     /// use std::error::Error;
     /// 
@@ -576,7 +555,7 @@ impl Overlay {
     /// const COORD: Coord = Coord {x: 0.5, y: 0.5};          // The position of the rectangle
     /// const COLOR: Color = Color::RED;                    // The color of the rectangle
     /// 
-    /// let mut overlay = Overlay::init_with_name(PARENT_WINDOW, &MAPPING, HOST).unwrap();
+    /// let mut overlay = Overlay::init(Parent::Name(PARENT_WINDOW), &MAPPING, HOST).unwrap();
     /// 
     /// // Create a new rectangle
     /// let rec = Rectangle::fill(ANCHOR, COORD, SIZE, COLOR).unwrap();
@@ -642,7 +621,10 @@ impl Overlay {
     }
 }
 
-impl Drawable for Overlay {
+impl<C> Drawable for Overlay<C>
+where
+    C: Connection,
+{
     /// Get the id of the overlay window
     fn id(&self) -> XDrawable {
         self.window.id()

@@ -34,7 +34,7 @@
 //!     event::Event, key::{Key, KeyRef}, shape::{
 //!         coord::{Anchor, Coord, Size},
 //!         Rectangle,
-//!     }, Color, Drawable, Mapping, Overlay
+//!     }, Color, Drawable, Mapping, Overlay, Parent
 //! };
 //! 
 //! use std::{env, error::Error};
@@ -59,7 +59,7 @@
 //!     // println!("Window: {:#x}", window);
 //! 
 //!     // Initialize the overlay
-//!     let mut overlay = Overlay::init(window, &Mapping::FullScreen, None)?;
+//!     let mut overlay = Overlay::init(Parent::Id(window), &Mapping::FullScreen, None)?;
 //! 
 //!     // Display parent and overlay window ids
 //!     println!("Parent window: {:#x}", overlay.parent().id());
@@ -187,7 +187,7 @@ pub use drawable::{
 };
 
 /// Export Overlay object from overlay module
-pub use overlay::Overlay;
+pub use overlay::{Overlay, Parent};
 
 /// Re-export x11rb crate to allow to use it in the lib
 pub use x11rb;
