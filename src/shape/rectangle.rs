@@ -6,14 +6,13 @@ use std::{cell::RefCell, error::Error, rc::Rc};
 
 use x11rb::{
     connection::Connection,
-    protocol::xproto::{ConnectionExt, Gcontext, Rectangle as XRectangle},
+    protocol::xproto::{ConnectionExt, Rectangle as XRectangle},
 };
 
 use crate::{color::Color, drawable::Drawable};
 
 use super::{
-    coord::{Anchor, Coord, CoordExt, Size, SizeExt},
-    Shape,
+    coord::{Anchor, Coord, CoordExt, Size, SizeExt}, GcontextWrapperExt, Shape
 };
 
 /// Represents a rectangle shape object used by the overlay library.
@@ -21,7 +20,8 @@ pub struct Rectangle {
     anchor: Anchor, // Describes where the coordinate is relative to the shape
     position: Coord,
     size: Size,
-    color: Color,
+    forground: Color,
+    background: Color,
     filled: bool,
 }
 
@@ -48,7 +48,8 @@ impl Rectangle {
             anchor,
             position,
             size,
-            color,
+            forground: color,
+            background: color, // Not used
             filled: true,
         })))
     }
@@ -60,7 +61,8 @@ impl Rectangle {
     /// * `anchor` - The anchor point of the rectangle.
     /// * `position` - The position of the rectangle.
     /// * `size` - The size of the rectangle.
-    /// * `color` - The color of the rectangle.
+    /// * `forground` - The color of the edges of the rectangle.
+    /// * `background` - The color of the rectangle.
     ///
     /// # Returns
     ///
@@ -69,13 +71,15 @@ impl Rectangle {
         anchor: Anchor,
         position: Coord,
         size: Size,
-        color: Color,
+        forground: Color,
+        background: Color,
     ) -> Result<Rc<RefCell<Self>>, Box<dyn Error>> {
         Ok(Rc::new(RefCell::new(Self {
             anchor,
             position,
             size,
-            color,
+            forground,
+            background,
             filled: false,
         })))
     }
@@ -110,15 +114,16 @@ impl Rectangle {
         self.size = size;
     }
 
-    /// Returns the color of the rectangle.
-    pub fn color(&self) -> &Color {
-        &self.color
+    /// Sets the color of the rectangle.
+    pub fn set_forground_color(&mut self, color: Color) {
+        self.forground = color;
     }
 
-    /// Sets the color of the rectangle.
-    pub fn set_color(&mut self, color: Color) {
-        self.color = color;
+    /// Sets the background color of the rectangle.
+    pub fn set_background_color(&mut self, color: Color) {
+        self.background = color;
     }
+
 }
 
 impl<C: Connection> Shape<C> for Rectangle {
@@ -133,7 +138,7 @@ impl<C: Connection> Shape<C> for Rectangle {
     /// # Returns
     ///
     /// A `Result` containing `()` if the drawing is successful, or a `Box` containing an error if the drawing fails.
-    fn draw(&self, conn: &C, gc: &Gcontext, drawable: &dyn Drawable) -> Result<(), Box<dyn Error>> {
+    fn draw(&self, conn: &C, gc: &GcontextWrapperExt<C>, drawable: &dyn Drawable) -> Result<(), Box<dyn Error>> {
         // Calculate the position of the rectangle
         let coord = self
             .position
@@ -147,7 +152,7 @@ impl<C: Connection> Shape<C> for Rectangle {
         match self.filled {
             true => conn.poly_fill_rectangle(
                 drawable.id(),
-                *gc,
+                gc.gcontext(),
                 &[XRectangle {
                     x,
                     y,
@@ -157,7 +162,7 @@ impl<C: Connection> Shape<C> for Rectangle {
             )?,
             false => conn.poly_rectangle(
                 drawable.id(),
-                *gc,
+                gc.gcontext(),
                 &[XRectangle {
                     x,
                     y,
@@ -171,7 +176,12 @@ impl<C: Connection> Shape<C> for Rectangle {
     }
 
     /// Returns the color of the rectangle.
-    fn color(&self) -> &Color {
-        &self.color
+    fn forground(&self) -> &Color {
+        &self.forground
+    }
+
+    /// Returns the background color of the rectangle.
+    fn background(&self) -> &Color {
+        &self.background
     }
 }

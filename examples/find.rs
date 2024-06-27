@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 current_color = (current_color + 1) % color_tab.len();
 
                 let mut rec = rec.borrow_mut();
-                rec.set_color(color_tab[current_color]);
+                rec.set_forground_color(color_tab[current_color]);
 
                 Some(Event::Redraw)
             }

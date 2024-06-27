@@ -231,6 +231,14 @@ where
             y: self.y.into() / length,
         }
     }
+
+    /// Return the hammard product of two Vec2
+    pub fn hammard(&self, rhs: Vec2<T>) -> Vec2<T> {
+        Vec2 {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+        }
+    }
 }
 
 #[cfg(test)]

@@ -40,7 +40,7 @@ use x11rb::{
     protocol::{
         shape::{self as shape, ConnectionExt as ShapeConnectionExt},
         xproto::{
-            ChangeGCAux, ConnectionExt, CreateGCAux, Drawable as XDrawable, Window as XWindow,
+            ConnectionExt, Drawable as XDrawable, FontWrapper, Fontable, Window as XWindow
         },
     },
     rust_connection::RustConnection,
@@ -52,10 +52,11 @@ use crate::{
         window::{Mapping, Window},
         Drawable,
     }, event::Event, math::vec::Vec2, shape::{
-        coord::{Anchor, Coord, Size},
-        Rectangle, Shape,
+        coord::{Anchor, Coord, Size}, GcontextWrapperExt, Rectangle, Shape
     }, utils, Color
 };
+
+const SELECTED_FONT: &str = "-misc-fixed-*";
 
 /// The overlay struct
 /// 
@@ -65,7 +66,7 @@ where
     C: Connection,
 {
     /// The connection to the X server
-    pub conn: C,
+    pub conn: Rc<C>,
     /// The parent window
     parent: Window,
     /// The overlay window
@@ -74,6 +75,8 @@ where
     render_queue: Vec<Rc<RefCell<dyn Shape<C>>>>,
     /// The last mouse position
     last_mouse_pos: Coord,
+    /// The selected font
+    font: FontWrapper<Rc<C>>,
 }
 
 pub enum Parent<'a> {
@@ -140,12 +143,18 @@ where
 {
     pub fn init_with_conn(parent: XWindow, mapping: &Mapping, conn: C, screen_num: usize) -> Result<Self, Box<dyn Error>>
     {
+        // Encapsulate the connection
+        let conn = Rc::new(conn);
+
         // Fetch the root window
         let root = conn.setup().roots[screen_num].root;
 
         // Create a new window
         let parent = Window::from(&conn, parent, root)?;
         let window = Window::new(&conn, &parent, mapping)?;
+
+        // Create a new font
+        let font = FontWrapper::open_font(conn.clone(), SELECTED_FONT.as_bytes())?;
 
         // Create the overlay
         Ok(Self {
@@ -154,6 +163,7 @@ where
             window,
             render_queue: Vec::new(),
             last_mouse_pos: Coord::new(0.0, 0.0),
+            font,
         })
     }
 
@@ -292,28 +302,79 @@ where
         let pixmap = Pixmap::new(&self.conn, &self.window, Some(Depth::D1))?;
 
         // Create the graphics context
-        let not_transparent_gc = self.conn.generate_id()?;
-        self.conn.create_gc(
-            not_transparent_gc,
+        // let not_transparent_gc = self.conn.generate_id()?;
+        // self.conn.create_gc(
+        //     not_transparent_gc,
+        //     pixmap.id(),
+        //     &CreateGCAux::new().foreground(1),
+        // )?;
+        // let transparent_gc = self.conn.generate_id()?;
+        // self.conn.create_gc(
+        //     transparent_gc,
+        //     pixmap.id(),
+        //     &CreateGCAux::new().foreground(0),
+        // )?;
+
+        // let not_transparent_gc = GcontextWrapperExt::init(
+        //     self.conn.as_ref(),
+        //     pixmap.id(),
+        //     Some(Color::WHITE.value(&pixmap.depth())),
+        //     Some(Color::WHITE.value(&pixmap.depth())),
+        //     Some(self.font.font()),
+        // )?;
+
+        // let transparent_gc = GcontextWrapperExt::init(
+        //     self.conn.as_ref(),
+        //     pixmap.id(),
+        //     Some(Color::BLACK.value(&pixmap.depth())),
+        //     Some(Color::BLACK.value(&pixmap.depth())),
+        //     Some(self.font.font()),
+        // )?;
+
+        // // Draw the shapes
+        // for shape in &self.render_queue {
+        //     let shape = shape.borrow();
+        //     if shape.forground() == &Color::TRANSPARENT {
+        //         shape.draw(&self.conn, &transparent_gc, &pixmap)?;
+        //     } else {
+        //         shape.draw(&self.conn, &not_transparent_gc, &pixmap)?;
+        //     }
+        // }
+
+        let mut shape_gc = GcontextWrapperExt::init(
+            self.conn.as_ref(),
             pixmap.id(),
-            &CreateGCAux::new().foreground(1),
-        )?;
-        let transparent_gc = self.conn.generate_id()?;
-        self.conn.create_gc(
-            transparent_gc,
-            pixmap.id(),
-            &CreateGCAux::new().foreground(0),
+            None,
+            None,
+            Some(self.font.font()),
         )?;
 
-        // Draw the shapes
-        for shape in &self.render_queue {
+        for shape in self.render_queue.iter() {
             let shape = shape.borrow();
-            if shape.color() == &Color::TRANSPARENT {
-                shape.draw(&self.conn, &transparent_gc, &pixmap)?;
-            } else {
-                shape.draw(&self.conn, &not_transparent_gc, &pixmap)?;
-            }
+
+            shape_gc.set_foreground(
+                self.conn.as_ref(),
+                if shape.forground() == &Color::TRANSPARENT {
+                    Some(Color::BLACK.value(&pixmap.depth()))
+                } else {
+                    Some(shape.forground().value(&pixmap.depth()))
+                }
+            )?;
+
+            shape_gc.set_background(
+                self.conn.as_ref(),
+                if shape.background() == &Color::TRANSPARENT {
+                    Some(Color::BLACK.value(&pixmap.depth()))
+                } else {
+                    Some(shape.background().value(&pixmap.depth()))
+                }
+            )?;
+
+            // Draw the shape
+            shape.draw(&self.conn, &shape_gc, &pixmap)?;
         }
+
+
 
         // Compute the shape to window
         self.conn.shape_mask(
@@ -327,36 +388,43 @@ where
 
         // Free the pixmap
         pixmap.free(&self.conn)?;
-        // Free the graphics contexts
-        self.conn.free_gc(transparent_gc)?;
-        self.conn.free_gc(not_transparent_gc)?;
 
         // Create a new pixmap
         let pixmap = Pixmap::new(&self.conn, &self.window, None)?;
 
         // Create the graphics context for the shape
-        let gc = self.conn.generate_id()?;
-        self.conn.create_gc(gc, pixmap.id(), &CreateGCAux::new())?;
+        // let gc = self.conn.generate_id()?;
+        // self.conn.create_gc(gc, pixmap.id(), &CreateGCAux::new())?;
+        let mut gc = GcontextWrapperExt::init(
+            self.conn.as_ref(),
+            pixmap.id(),
+            None,
+            None,
+            Some(self.font.font()),
+        )?;
 
         // Draw the pixmap to the window
         for shape in &self.render_queue {
             let shape = shape.borrow();
-            if shape.color() != &Color::TRANSPARENT {
+            if shape.forground() != &Color::TRANSPARENT {
                 // Set the color
-                self.conn.change_gc(
-                    gc,
-                    &ChangeGCAux::new().foreground(shape.color().value(&pixmap.depth())),
-                )?;
-                // Draw the shape
-                shape.draw(&self.conn, &gc, &pixmap)?;
+                gc.set_foreground(&self.conn, Some(shape.forground().value(&pixmap.depth())))?;
             }
+
+            if shape.background() != &Color::TRANSPARENT {
+                // Set the background color
+                gc.set_background(&self.conn, Some(shape.background().value(&pixmap.depth())))?;
+            }
+
+            // Draw the shape
+            shape.draw(&self.conn, &gc, &pixmap)?;
         }
 
         // Copy the pixmap to the window
         self.conn.copy_area(
             pixmap.id(),
             self.window.id(),
-            gc,
+            gc.gcontext(),
             0,
             0,
             0,
@@ -368,7 +436,7 @@ where
         // Free the pixmap
         pixmap.free(&self.conn)?;
         // Free the graphics context
-        self.conn.free_gc(gc)?;
+        // self.conn.free_gc(gc)?;
 
         // Flush the connection
         self.conn.flush()?;
@@ -490,10 +558,18 @@ where
     /// 
     /// If the event could not be handled
     ///
-    fn handle_event<F>(&mut self, event: Event, mut callback: F) -> Result<bool, Box<dyn Error>>
+    fn handle_event<F>(&mut self, event: Event, mut callback: F, debounce_table: &mut [std::time::Instant]) -> Result<bool, Box<dyn Error>>
     where
         F: FnMut(&mut Self, Event) -> Option<Event>,
     {
+
+        if event.is_debounce(debounce_table) {
+            // Debounced
+            // Return Ok(true) to continue the event loop
+            return Ok(true);
+        }
+
+
         match event {
             Event::ParentResize(size) => {
                 self.refresh(size)?.draw()?;
@@ -513,7 +589,7 @@ where
         let new_event = callback(self, event);
         // Handle the new event
         if let Some(event) = new_event {
-            self.handle_event(event, callback)
+            self.handle_event(event, callback, debounce_table)
         } else {
             Ok(true) // Continue the event loop as event does not trigger an event
         }
@@ -578,14 +654,22 @@ where
     where
         F: FnMut(&mut Self, Event) -> Option<Event>,
     {
+        println!("");
         let mut is_running = true;
         // Draw at least once
         self.draw()?;
+
+        // Setup the debounce table
+        let mut debounce_table = Event::gen_debounce_table();
+
         // Main event loop
         while is_running {
+            
             // Poll the event
             let event = Event::wait(&mut self)?;
-            is_running = self.handle_event(event, &mut callback)?;
+
+            is_running = self.handle_event(event, &mut callback, &mut debounce_table)?;
+
         }
         self.free()?;
         Ok(())
@@ -619,6 +703,27 @@ where
         self.window.free(&self.conn)?;
         Ok(())
     }
+
+    /// Get the connection to the X server
+    /// 
+    /// # Returns
+    /// 
+    /// The connection to the X server
+    /// 
+    pub fn conn(&self) -> &C {
+        &self.conn
+    }
+
+    /// Get the font of the overlay
+    /// 
+    /// # Returns
+    /// 
+    /// The font of the overlay
+    /// 
+    pub fn font(&self) -> Option<Fontable> {
+        Some(self.font.font())
+    }
+
 }
 
 impl<C> Drawable for Overlay<C>

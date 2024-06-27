@@ -58,10 +58,60 @@ pub enum Event {
 
 /// Implement the event handling system for the overlay.
 impl Event {
-    /// Waits for an event to occur and returns the corresponding `Event` value.
-    pub fn wait<C: Connection>(overlay: &Overlay<C>) -> Result<Self, Box<dyn Error>> {
-        let xevent = overlay.conn.wait_for_event()?;
 
+    #[inline(always)]
+    pub fn gen_debounce_table() -> [std::time::Instant; Self::debounce_table_len()] {
+        [std::time::Instant::now(); Self::debounce_table_len()]
+    }
+
+    #[inline(always)]
+    pub fn is_debounce(&self, debounce_table: &mut [std::time::Instant]) -> bool {
+        let (index, timing) = self.debounce_table();
+        if debounce_table[index].elapsed() < timing {
+            true
+        } else {
+            debounce_table[index] = std::time::Instant::now();
+            false
+        }
+    }
+
+    const fn debounce_table_index(&self) -> usize {
+        match self {
+            Self::ParentResize(_) => 0,
+            Self::MousePress { .. } => 1,
+            Self::MouseMotion { .. } => 2,
+            Self::KeyPress(_) => 3,
+            Self::KeyRelease(_) => 4,
+            Self::Redraw => 5,
+            Self::StopEventLoop => 6,
+            Self::Nothing => 7,
+            Self::Unkown => 8,
+        }
+    }
+
+    const fn debounce_table_timing(&self) -> std::time::Duration {
+        match self {
+            Self::ParentResize(_) => std::time::Duration::from_millis(0),
+            Self::MousePress { .. } => std::time::Duration::from_millis(0),
+            Self::MouseMotion { .. } => std::time::Duration::from_millis(0),
+            Self::KeyPress(_) => std::time::Duration::from_millis(0),
+            Self::KeyRelease(_) => std::time::Duration::from_millis(0),
+            Self::Redraw => std::time::Duration::from_millis(25),
+            Self::StopEventLoop => std::time::Duration::from_millis(0),
+            Self::Nothing => std::time::Duration::from_millis(0),
+            Self::Unkown => std::time::Duration::from_millis(0),
+        }
+    }
+
+    const fn debounce_table(&self) -> (usize, std::time::Duration) {
+        (self.debounce_table_index(), self.debounce_table_timing())
+    }
+
+    const fn debounce_table_len() -> usize {
+        9
+    }
+
+    fn handle_event<C: Connection>(overlay: &Overlay<C>, xevent: XEvent) -> Result<Self, Box<dyn Error>> {
         match xevent {
             XEvent::XinputMotion(ButtonPressEvent {
                 event_x,
@@ -131,6 +181,23 @@ impl Event {
                 println!("Unkown event: {:?}", xevent);
                 Ok(Self::Unkown)
             }
+        }
+    }
+
+    /// Waits for an event to occur and returns the corresponding `Event` value.
+    pub fn wait<C: Connection>(overlay: &Overlay<C>) -> Result<Self, Box<dyn Error>> {
+        Self::handle_event(
+            overlay,
+            overlay.conn.wait_for_event()?
+        )
+    }
+
+    /// Polls for an event and returns the corresponding `Event` value.
+    pub fn poll<C: Connection>(overlay: &Overlay<C>) -> Result<Option<Self>, Box<dyn Error>> {
+        if let Some(xevent) = overlay.conn.poll_for_event()? {
+            Some(Self::handle_event(overlay, xevent)).transpose()
+        } else {
+            Ok(None)
         }
     }
 }

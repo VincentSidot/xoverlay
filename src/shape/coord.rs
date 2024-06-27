@@ -51,6 +51,7 @@ pub type Size = Vec2f;
 pub trait CoordExt {
     fn from_anchor(anchor: &Anchor, size: &Size) -> Self;
     fn top_left(&self, anchor: &Anchor, size: &Size) -> Self;
+    fn bottom_left(&self, anchor: &Anchor, size: &Size) -> Self;
     fn to_real_coord<C: Into<f32> + Copy>(&self, size: Vec2<C>) -> Self;
 }
 
@@ -85,6 +86,22 @@ impl CoordExt for Coord {
     fn top_left(&self, anchor: &Anchor, size: &Size) -> Self {
         let delta = Self::from_anchor(anchor, size);
         *self - delta
+    }
+
+    /// Return the bottom left `Coord` based on the given `Anchor` and `Size` (for text rendering)
+    /// 
+    /// # Arguments
+    /// 
+    /// * `anchor` - The anchor point
+    /// * `size` - The size of the shape
+    /// 
+    /// # Returns
+    /// 
+    /// A new `Coord` representing the bottom left corner of the shape
+    /// 
+    fn bottom_left(&self, anchor: &Anchor, size: &Size) -> Self {
+        let delta = Self::from_anchor(anchor, size);
+        *self - delta + Coord::new(0.0, size.y())
     }
 
     /// Converts the `Coord` to a real coordinate based on the given `Size`
