@@ -190,7 +190,7 @@ pub use drawable::{
 };
 
 /// Export Overlay object from overlay module
-pub use overlay::{Overlay, Parent};
+pub use overlay::{Overlay, Parent, ResizePolicy};
 
 /// Re-export x11rb crate to allow to use it in the lib
 pub use x11rb;

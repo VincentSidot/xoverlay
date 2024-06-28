@@ -59,9 +59,11 @@ pub enum Event {
 /// Implement the event handling system for the overlay.
 impl Event {
 
+    pub const DB_SIZE: usize = 9;
+
     #[inline(always)]
-    pub fn gen_debounce_table() -> [std::time::Instant; Self::debounce_table_len()] {
-        [std::time::Instant::now(); Self::debounce_table_len()]
+    pub fn gen_debounce_table() -> [std::time::Instant; Self::DB_SIZE] {
+        [std::time::Instant::now(); Self::DB_SIZE]
     }
 
     #[inline(always)]
@@ -105,10 +107,6 @@ impl Event {
 
     const fn debounce_table(&self) -> (usize, std::time::Duration) {
         (self.debounce_table_index(), self.debounce_table_timing())
-    }
-
-    const fn debounce_table_len() -> usize {
-        9
     }
 
     fn handle_event<C: Connection>(overlay: &Overlay<C>, xevent: XEvent) -> Result<Self, Box<dyn Error>> {

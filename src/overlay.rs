@@ -77,11 +77,27 @@ where
     last_mouse_pos: Coord,
     /// The selected font
     font: FontWrapper<Rc<C>>,
+    /// The debounce table
+    debounce_table: [std::time::Instant; Event::DB_SIZE],
+    /// The resize policy
+    resize_policy: ResizePolicy,
 }
 
 pub enum Parent<'a> {
     Id(XWindow),
     Name(&'a str),
+}
+
+/// The resize policy of the overlay
+/// 
+/// The resize policy is used to determine how the overlay should be resized
+#[derive(Debug, Clone, Copy, Default)]
+pub enum ResizePolicy {
+    #[default]
+    KeepAspectRatio,
+    KeepWidth,
+    KeepHeight,
+    KeepBoth,
 }
 
 impl Overlay<RustConnection> {
@@ -125,7 +141,7 @@ impl Overlay<RustConnection> {
             Parent::Id(id) => id as XWindow,
             Parent::Name(name) => {
                 // Get the parent id
-                if let Some(id) = utils::find_window_by_name(&conn, root, &name)? {
+                if let Some(id) = utils::find_window_by_name(&conn, root, name)? {
                     id as XWindow
                 } else {
                     return Err("No window found".into());
@@ -164,6 +180,8 @@ where
             render_queue: Vec::new(),
             last_mouse_pos: Coord::new(0.0, 0.0),
             font,
+            debounce_table: Event::gen_debounce_table(),
+            resize_policy: ResizePolicy::default(),
         })
     }
 
@@ -257,6 +275,15 @@ where
     /// Get the parent window of the overlay
     pub fn parent(&self) -> &Window {
         &self.parent
+    }
+
+    pub fn resize_policy(&self) -> ResizePolicy {
+        self.resize_policy
+    }
+
+    pub fn set_resize_policy(&mut self, policy: ResizePolicy) -> &mut Self {
+        self.resize_policy = policy;
+        self
     }
 
     /// Draw the shapes in the overlay
@@ -534,12 +561,66 @@ where
     /// If the overlay could not be refreshed
     /// 
     fn refresh(&mut self, new_size: Vec2<u16>) -> Result<&mut Self, Box<dyn Error>> {
+
         if new_size == self.window.size() {
             // No need to resize
             return Ok(self);
         }
+
         self.parent.resize_event(new_size);
+
+        let previous_size = self.window.size();
         self.window.refresh(&self.conn, Some(&self.parent))?;
+
+        match self.resize_policy {
+            ResizePolicy::KeepAspectRatio => {
+                // Nothing to do
+            }
+            ResizePolicy::KeepWidth => {
+                // Keep the width
+                for shape in self.render_queue.iter_mut() {
+                    let mut shape = shape.borrow_mut();
+                    let size = shape.size();
+                    let pos = shape.position();
+
+                    let new_size_width = size.x * (previous_size.x as f32) / (new_size.x as f32);
+                    let new_pos_width = pos.x * (previous_size.x as f32) / (new_size.x as f32);
+
+                    shape.set_size(Size::new(new_size_width, size.y));
+                    shape.set_position(Coord::new(new_pos_width, pos.y));
+                }
+            }
+            ResizePolicy::KeepHeight => {
+                // Keep the height
+                // Keep the width
+                for shape in self.render_queue.iter_mut() {
+                    let mut shape = shape.borrow_mut();
+                    let size = shape.size();
+                    let pos = shape.position();
+
+                    let new_size_height = size.y * (previous_size.y as f32) / (new_size.y as f32);
+                    let new_pos_height = pos.y * (previous_size.y as f32) / (new_size.y as f32);
+
+                    shape.set_size(Size::new(size.x, new_size_height));
+                    shape.set_position(Coord::new(pos.x, new_pos_height));
+                }
+            }
+            ResizePolicy::KeepBoth => {
+                // Keep the size
+                // Keep the width
+                for shape in self.render_queue.iter_mut() {
+                    let mut shape = shape.borrow_mut();
+                    let size = shape.size();
+                    let pos = shape.position();
+
+                    let size = size.hammard(previous_size.convert()).inv_hammard(new_size.convert());
+                    let pos = pos.hammard(previous_size.convert()).inv_hammard(new_size.convert());
+
+                    shape.set_size(size);
+                    shape.set_position(pos);
+                }
+            }
+        }
         Ok(self)
     }
 
@@ -558,12 +639,12 @@ where
     /// 
     /// If the event could not be handled
     ///
-    fn handle_event<F>(&mut self, event: Event, mut callback: F, debounce_table: &mut [std::time::Instant]) -> Result<bool, Box<dyn Error>>
+    fn handle_event<F>(&mut self, event: Event, mut callback: F) -> Result<bool, Box<dyn Error>>
     where
         F: FnMut(&mut Self, Event) -> Option<Event>,
     {
 
-        if event.is_debounce(debounce_table) {
+        if event.is_debounce(&mut self.debounce_table) {
             // Debounced
             // Return Ok(true) to continue the event loop
             return Ok(true);
@@ -589,7 +670,7 @@ where
         let new_event = callback(self, event);
         // Handle the new event
         if let Some(event) = new_event {
-            self.handle_event(event, callback, debounce_table)
+            self.handle_event(event, callback)
         } else {
             Ok(true) // Continue the event loop as event does not trigger an event
         }
@@ -654,25 +735,52 @@ where
     where
         F: FnMut(&mut Self, Event) -> Option<Event>,
     {
-        println!("");
         let mut is_running = true;
         // Draw at least once
         self.draw()?;
-
-        // Setup the debounce table
-        let mut debounce_table = Event::gen_debounce_table();
 
         // Main event loop
         while is_running {
             
             // Poll the event
-            let event = Event::wait(&mut self)?;
+            let event = Event::wait(&self)?;
 
-            is_running = self.handle_event(event, &mut callback, &mut debounce_table)?;
+            is_running = self.handle_event(event, &mut callback)?;
 
         }
         self.free()?;
         Ok(())
+    }
+
+    pub fn poll_event(&mut self) -> Result<Option<Event>, Box<dyn Error>> {
+        if let Some(event) = Event::poll(self)? {
+
+            if event.is_debounce(&mut self.debounce_table) {
+                // Debounced
+                // We do not handle the event
+                Ok(None)
+            } else {
+                match event {
+                    Event::ParentResize(size) => {
+                        self.refresh(size)?.draw()?;
+                        Ok(None)
+                    }
+                    Event::Redraw => {
+                        self.draw()?;
+                        Ok(None)
+                    }
+                    Event::MouseMotion { coord } => {
+                        self.last_mouse_pos = coord;
+                        Ok(None)
+                    }
+                    event => {
+                        Ok(Some(event))
+                    }
+                }
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     /// Check if the overlay has focus

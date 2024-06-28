@@ -1,8 +1,8 @@
 
 use xoverlay::{
     event::Event, key::{Key, KeyRef}, shape::{
-        coord::{Anchor, Coord, Size}, Arc, Rectangle, Text
-    }, Color, Drawable, Mapping, Overlay, Parent,
+        coord::{Anchor, Coord, Size}, Rectangle,
+    }, Color, Drawable, Mapping, Overlay, Parent, ResizePolicy,
 };
 
 use std::{env, error::Error};
@@ -29,6 +29,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Initialize the overlay
     let mut overlay = Overlay::init(Parent::Id(window), &Mapping::FullScreen, None)?;
 
+    overlay.set_resize_policy(
+        ResizePolicy::KeepBoth,
+    );
+
     // Display parent and overlay window ids
     println!("Parent window: {:#x}", overlay.parent().id());
     println!("Overlay window: {:#x}", overlay.window().id());
@@ -44,14 +48,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     ];
     let mut current_color = 0;
 
-    // Create a text shape
-    let text = Text::text(
-        Anchor::Center,
-        Coord::new(0.0, 0.0),
-        color_tab[(current_color+1)%color_tab.len()],
-        Color::TRANSPARENT,
-        "Hello, World!"
-    );
+    // // Create a text shape
+    // let text = Text::text(
+    //     Anchor::Center,
+    //     Coord::new(0.0, 0.0),
+    //     color_tab[(current_color+1)%color_tab.len()],
+    //     Color::TRANSPARENT,
+    //     "Hello, World!"
+    // );
 
     // Create rectangles
     // let rec = Arc::filled(
@@ -64,10 +68,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     // )?;
     let rec = Rectangle::fill(
         Anchor::Center,
-        Coord::new(0.0, 0.0),
-        text.as_ref().borrow().get_size(&overlay)?.hammard(
-            Size::new(1.1, 1.8)
-        ),
+        Coord::new(0.5, 0.5),
+        Size::new(0.2, 0.2),
         color_tab[current_color],
     )?;
 
@@ -83,28 +85,29 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Add the rectangles to the overlay
     overlay.add_shape(rec.clone());
-    overlay.add_shape(text.clone());
+    // overlay.add_shape(text.clone());
     overlay.event_loop(|_, event| {
         match event {
-            Event::MouseMotion { coord } => {
-                let mut rec = rec.borrow_mut();
-                let mut text = text.borrow_mut();
-                rec.set_position(coord);
-                text.set_position(coord);
-                Some(Event::Redraw)
+            Event::MouseMotion { .. } => {
+                // let mut rec = rec.borrow_mut();
+                // let mut text = text.borrow_mut();
+                // rec.set_position(coord);
+                // text.set_position(coord);
+                // Some(Event::Redraw)
+                None
             }
             Event::KeyPress(Key(KeyRef::ArrowUp)) => {
                 // println!("ArrowUp pressed");
                 Some(Event::StopEventLoop)
             }
-            Event::MousePress { button, coord } => {
+            Event::MousePress { .. } => {
                 // println!("MousePress: {:?} at {:?}", button, coord);
                 current_color = (current_color + 1) % color_tab.len();
 
                 let mut rec = rec.borrow_mut();
-                let mut text = text.borrow_mut();
                 rec.set_forground_color(color_tab[current_color]);
-                text.set_forground_color(color_tab[(current_color + 1) % color_tab.len()]);
+                // let mut text = text.borrow_mut();
+                // text.set_forground_color(color_tab[(current_color + 1) % color_tab.len()]);
 
 
                 Some(Event::Redraw)
