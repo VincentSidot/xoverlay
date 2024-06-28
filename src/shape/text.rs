@@ -105,16 +105,12 @@ impl Text {
         
                 let raw_width = extents.overall_width;
                 let raw_height = extents.overall_ascent as i32 + extents.overall_descent as i32;
-        
-                println!("Raw Width: {}, Raw Height: {}", raw_width, raw_height);
-                println!("Size: {:?}", size);
+                
         
                 // Translate the size to portion of the screen
                 let width = raw_width as f32 / size.x() as f32;
                 let height = raw_height as f32 / size.y() as f32;
-        
-                println!("Width: {}, Height: {}", width, height*0.4);
-        
+                
         
                 let size = Size::new(width, height); // Source: trust me bro
 

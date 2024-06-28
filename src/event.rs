@@ -176,7 +176,6 @@ impl Event {
             XEvent::MapNotify(_) => Ok(Self::Redraw),
             XEvent::NoExposure(_) => Ok(Self::Redraw),
             _ => {
-                println!("Unkown event: {:?}", xevent);
                 Ok(Self::Unkown)
             }
         }
