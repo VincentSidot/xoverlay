@@ -54,6 +54,7 @@ fn compute_levensthein_distance_case_insensitive(a: &str, b: &str) -> usize {
     let b_len = b.chars().count(); // Number of characters in a string (multi-byte characters are counted as one character)
     let mut dp = vec![vec![0; b_len + 1]; a_len + 1];
     // Intialize the first row and the first column
+    #[allow(clippy::needless_range_loop)]
     for i in 0..=a_len {
         dp[i][0] = i;
     }
