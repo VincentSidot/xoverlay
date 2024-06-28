@@ -26,6 +26,133 @@ pub type Vec2f = Vec2<f32>;
 pub type Vec2i = Vec2<i32>;
 pub type Vec2u = Vec2<u32>;
 
+
+/// Implements basic operations for Vec2
+impl<T> Vec2<T>
+{
+    /// Returns the x component of the Vec2
+    pub fn x(&self) -> T 
+    where
+        T: Copy,
+    {
+        self.x
+    }
+
+    /// Returns the y component of the Vec2
+    pub fn y(&self) -> T
+    where
+        T: Copy,
+    {
+        self.y
+    }
+
+    /// Returns a new Vec2 with the given x and y components
+    pub fn new(x: T, y: T) -> Self {
+        Vec2 { x, y }
+    }
+
+    // Convert the Vec2 to another type
+    pub fn convert<U>(&self) -> Vec2<U>
+    where
+        T: Copy,
+        U: From<T>,
+    
+    {
+        Vec2 {
+            x: U::from(self.x),
+            y: U::from(self.y),
+        }
+    }
+
+    /// Returns a new Vec2 with the x component set to the given value
+    pub fn with_x(&self, x: T) -> Self
+    where
+        T: Copy,
+    {
+        Vec2 { x, y: self.y }
+    }
+
+    /// Returns a new Vec2 with the y component set to the given value
+    pub fn with_y(&self, y: T) -> Self
+    where
+        T: Copy,
+    {
+        Vec2 { x: self.x, y }
+    }
+
+
+    /// Returns the dot product of two Vec2
+    pub fn dot(&self, rhs: Vec2<T>) -> T
+    where
+        T: ops::Mul<Output = T> + ops::Add<Output = T> + Copy,
+    {
+        self.x * rhs.x + self.y * rhs.y
+    }
+
+    /// Returns the euclidean length of the Vec2
+    pub fn length(&self) -> f32
+    where
+        T: Into<f32> + Copy,
+    {
+        (self.x.into().powi(2) + self.y.into().powi(2)).sqrt()
+    }
+
+    /// Returns the squared euclidean length of the Vec2 (faster than length)
+    pub fn fast_length(&self) -> f32
+    where
+        T: Into<f32> + Copy,
+    {
+        let x = self.x.into();
+        let y = self.y.into();
+        x * x + y * y
+    }
+
+    /// Returns the normalized Vec2 (length = 1)
+    pub fn normalize(&self) -> Vec2<f32>
+    where
+        T: Into<f32> + Copy,
+    {
+        let length = self.length();
+        Vec2 {
+            x: self.x.into() / length,
+            y: self.y.into() / length,
+        }
+    }
+
+    /// Return the hammard product of two Vec2
+    pub fn hammard(&self, rhs: Vec2<T>) -> Vec2<T>
+    where
+        T: ops::Mul<Output = T> + Copy,
+    {
+        Vec2 {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+        }
+    }
+
+    /// Return the inverse hammard product of two Vec2
+    pub fn inv_hammard(&self, rhs: Vec2<T>) -> Vec2<T>
+    where
+        T: ops::Div<Output = T> + Copy,
+    {
+        Vec2 {
+            x: self.x / rhs.x,
+            y: self.y / rhs.y,
+        }
+    }
+
+}
+
+/// Implements the Display trait for Vec2
+impl<T> std::fmt::Display for Vec2<T>
+where
+    T: std::fmt::Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 /// Implements the Add trait for Vec2
 impl<T> ops::Add<Vec2<T>> for Vec2<T>
 where
@@ -129,7 +256,6 @@ impl<T> From<(T, T)> for Vec2<T> {
         Vec2 { x, y }
     }
 }
-
 impl<T> From<[T; 2]> for Vec2<T>
 where
     T: Copy,
@@ -158,86 +284,6 @@ where
 {
     fn from(vec: Vec2<T>) -> Self {
         [vec.x, vec.y]
-    }
-}
-
-/// Implements basic operations for Vec2
-impl<T> Vec2<T>
-where
-    T: Copy,
-{
-    /// Returns the x component of the Vec2
-    pub fn x(&self) -> T {
-        self.x
-    }
-
-    /// Returns the y component of the Vec2
-    pub fn y(&self) -> T {
-        self.y
-    }
-
-    /// Returns a new Vec2 with the given x and y components
-    pub fn new(x: T, y: T) -> Self {
-        Vec2 { x, y }
-    }
-
-    /// Returns a new Vec2 with the x component set to the given value
-    pub fn with_x(&self, x: T) -> Self {
-        Vec2 { x, y: self.y }
-    }
-
-    /// Returns a new Vec2 with the y component set to the given value
-    pub fn with_y(&self, y: T) -> Self {
-        Vec2 { x: self.x, y }
-    }
-}
-
-/// Implements the euclidean space operations for Vec2
-impl<T> Vec2<T>
-where
-    T: ops::Mul<Output = T> + ops::Add<Output = T> + Copy,
-{
-    /// Returns the dot product of two Vec2
-    pub fn dot(&self, rhs: Vec2<T>) -> T {
-        self.x * rhs.x + self.y * rhs.y
-    }
-
-    /// Returns the euclidean length of the Vec2
-    pub fn length(&self) -> f32
-    where
-        T: Into<f32>,
-    {
-        (self.x.into().powi(2) + self.y.into().powi(2)).sqrt()
-    }
-
-    /// Returns the squared euclidean length of the Vec2 (faster than length)
-    pub fn fast_length(&self) -> f32
-    where
-        T: Into<f32>,
-    {
-        let x = self.x.into();
-        let y = self.y.into();
-        x * x + y * y
-    }
-
-    /// Returns the normalized Vec2 (length = 1)
-    pub fn normalize(&self) -> Vec2<f32>
-    where
-        T: Into<f32>,
-    {
-        let length = self.length();
-        Vec2 {
-            x: self.x.into() / length,
-            y: self.y.into() / length,
-        }
-    }
-
-    /// Return the hammard product of two Vec2
-    pub fn hammard(&self, rhs: Vec2<T>) -> Vec2<T> {
-        Vec2 {
-            x: self.x * rhs.x,
-            y: self.y * rhs.y,
-        }
     }
 }
 
