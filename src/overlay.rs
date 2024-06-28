@@ -763,20 +763,17 @@ where
                 match event {
                     Event::ParentResize(size) => {
                         self.refresh(size)?.draw()?;
-                        Ok(None)
                     }
                     Event::Redraw => {
                         self.draw()?;
-                        Ok(None)
                     }
                     Event::MouseMotion { coord } => {
                         self.last_mouse_pos = coord;
-                        Ok(None)
                     }
-                    event => {
-                        Ok(Some(event))
+                    _ => {
                     }
                 }
+                Ok(Some(event))
             }
         } else {
             Ok(None)
