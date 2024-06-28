@@ -5,6 +5,7 @@
 #![allow(dead_code)]
 
 use std::error::Error;
+use coord::{Anchor, Coord, Size};
 use x11rb::{connection::Connection, protocol::xproto::{ChangeGCAux, ConnectionExt, CreateGCAux, Drawable as XDrawable, Fontable, Gcontext, GcontextWrapper}};
 
 use crate::{drawable::Drawable, Color};
@@ -123,4 +124,19 @@ where
 
     /// Returns the background color of the shape.
     fn background(&self) -> &Color;
+
+    /// Returns the shape size.
+    fn size(&self) -> Size;
+
+    /// Resizes the shape to the specified size.
+    fn set_size(&mut self, size: Size);
+
+    /// Returns the anchor point of the shape.
+    fn anchor(&self) -> &Anchor;
+
+    /// Returns the shape's position.
+    fn position(&self) -> Coord;
+
+    /// Sets the shape's position.
+    fn set_position(&mut self, position: Coord);
 }

@@ -264,4 +264,26 @@ impl<C: Connection> Shape<C> for Arc {
     fn background(&self) -> &Color {
         &self.background
     }
+
+    /// Returns the shape size.
+    fn size(&self) -> Size {
+        self.size
+    }
+
+    /// Resizes the shape to the specified size.
+    fn set_size(&mut self, size: Size) {
+        self.size = size;
+    }
+    
+    fn anchor(&self) -> &Anchor {
+        &self.anchor
+    }
+    
+    fn position(&self) -> Coord {
+        self.position
+    }
+    
+    fn set_position(&mut self, position: Coord) {
+        self.position = position;
+    }
 }
