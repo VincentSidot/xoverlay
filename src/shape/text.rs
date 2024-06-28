@@ -28,7 +28,7 @@ fn string_to_char2b(text: &str) -> Vec<Char2b> {
 
 impl Text {
 
-    pub fn text<T: ToString>(
+    pub fn new<T: ToString>(
         anchor: Anchor,
         position: Coord,
         forground: Color,
@@ -119,7 +119,7 @@ impl Text {
                 let size = Size::new(width, height); // Source: trust me bro
 
                 // Let's store the size for future use
-                (size.clone(), Some((size, font)))
+                (size, Some((size, font)))
             }
         };
 
@@ -162,5 +162,32 @@ impl<C: Connection> Shape<C> for Text {
 
     fn background(&self) -> &Color {
         &self.background
+    }
+
+    /// Returns the shape size.
+    fn size(&self) -> Size {
+        // We need to compute the size of the text
+        // I don't know how to do that yet
+        Size::new(0.0, 0.0)
+    }
+
+    /// Resizes the shape to the specified size.
+    fn set_size(&mut self, _size: Size) {
+        // We need to update the font size
+        // I don't know how to do that yet
+
+        // TODO: Implement resizing of the text
+    }
+    
+    fn anchor(&self) -> &Anchor {
+        &self.anchor
+    }
+    
+    fn position(&self) -> Coord {
+        self.position
+    }
+    
+    fn set_position(&mut self, position: Coord) {
+        self.position = position;
     }
 }
